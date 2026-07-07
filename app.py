@@ -96,7 +96,6 @@ with st.sidebar:
 
     st.subheader("Percurso de estudo")
 
-    st.page_link("app.py", label="🏠 Início")
     st.page_link("pages/01_Curvas.py", label="1. Curvas em R³")
 
     st.markdown("2. Superfícies Regulares")
