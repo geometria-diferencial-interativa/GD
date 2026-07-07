@@ -290,21 +290,51 @@ else:
     N = np.zeros(3)
 
 B = safe_unit(np.cross(T, N))
+
+
 st.subheader("Curva escolhida")
 
-st.write("A curva visualizada no gráfico é dada por:")
+st.markdown("A curva visualizada no gráfico é a aplicação parametrizada:")
+
+st.latex(
+    rf"\alpha:I\subset\mathbb{{R}}\longrightarrow \mathbb{{R}}^3,"
+    rf"\qquad I=[{fmt(tmin,2)},\,{fmt(tmax,2)}]"
+)
+
 st.latex(curve_latex(name))
 
-if name in ["Circunferência", "Hélice circular"]:
-    st.write(
-        f"Neste exemplo, o parâmetro escolhido é "
-        f"a = {fmt(a, 2)}."
+st.markdown("Portanto, para cada valor de \(t\in I\), obtemos um ponto")
+
+st.latex(
+    r"\alpha(t)=(x(t),y(t),z(t))\in\mathbb{R}^3."
+)
+
+if name == "Reta":
+    st.markdown(
+        "Nesta parametrização, \(t\) controla simultaneamente as três coordenadas."
     )
 
-if name == "Hélice circular":
-    st.write(
-        f"O parâmetro b = {fmt(b, 2)} controla a inclinação vertical da hélice."
+elif name == "Circunferência":
+    st.markdown(
+        f"Nesta parametrização, \(a={fmt(a,2)}\) é o raio da circunferência."
     )
+
+elif name == "Hélice circular":
+    st.markdown(
+        f"Nesta parametrização, \(a={fmt(a,2)}\) é o raio da hélice "
+        f"e \(b={fmt(b,2)}\) controla a inclinação vertical."
+    )
+
+elif name == "Parábola espacial":
+    st.markdown(
+        "Nesta parametrização, as coordenadas crescem como \(t\), \(t^2\) e \(t^3\)."
+    )
+
+elif name == "Curva toroidal":
+    st.markdown(
+        "Nesta parametrização, a curva se enrola sobre uma região toroidal."
+    )
+
 left, right = st.columns([2.2, 1])
 
 with left:
