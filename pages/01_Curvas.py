@@ -193,7 +193,7 @@ def make_plot(alpha, p, T, N, B, show_frame=True):
             y=alpha[:, 1],
             z=alpha[:, 2],
             mode="lines",
-            name="curva",
+            name="Curva",
             line=dict(width=6),
         )
     )
@@ -204,19 +204,30 @@ def make_plot(alpha, p, T, N, B, show_frame=True):
             y=[p[1]],
             z=[p[2]],
             mode="markers",
-            name="ponto escolhido",
-            marker=dict(size=6),
+            name="Ponto α(t₀)",
+            marker=dict(size=7),
         )
     )
 
     if show_frame:
-        add_arrow(fig, p, T, "T: tangente", scale=0.9)
-        add_arrow(fig, p, N, "N: normal", scale=0.9)
-        add_arrow(fig, p, B, "B: binormal", scale=0.9)
+        add_arrow(fig, p, T, "T(t₀): tangente", scale=0.9)
+        add_arrow(fig, p, N, "N(t₀): normal", scale=0.9)
+        add_arrow(fig, p, B, "B(t₀): binormal", scale=0.9)
 
     fig.update_layout(
         height=650,
         margin=dict(l=0, r=0, t=40, b=0),
+        legend=dict(
+            font=dict(size=15),
+            itemsizing="constant",
+            x=0.02,
+            y=0.02,
+            xanchor="left",
+            yanchor="bottom",
+            bgcolor="rgba(255,255,255,0.75)",
+            bordercolor="rgba(100,100,100,0.4)",
+            borderwidth=1,
+        ),
         scene=dict(
             xaxis_title="x",
             yaxis_title="y",
@@ -224,8 +235,8 @@ def make_plot(alpha, p, T, N, B, show_frame=True):
             aspectmode="data",
         ),
     )
-    return fig
 
+    return fig
 
 st.title("Módulo 1 — Curvas em R³")
 
