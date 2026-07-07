@@ -266,8 +266,19 @@ with st.sidebar:
 
     st.header("Domínio")
 
-    tmin = st.number_input("t mínimo", value=-6.0)
-    tmax = st.number_input("t máximo", value=6.0)
+    if name == "Parábola espacial":
+    default_tmin, default_tmax = -2.0, 2.0
+elif name == "Circunferência":
+    default_tmin, default_tmax = 0.0, 2 * np.pi
+elif name == "Hélice circular":
+    default_tmin, default_tmax = -6.0, 6.0
+elif name == "Curva toroidal":
+    default_tmin, default_tmax = 0.0, 2 * np.pi
+else:
+    default_tmin, default_tmax = -3.0, 3.0
+
+tmin = st.number_input("t mínimo", value=float(default_tmin))
+tmax = st.number_input("t máximo", value=float(default_tmax))
 
     n = st.slider("Resolução", 100, 1000, 400, 50)
 
