@@ -1,259 +1,551 @@
 import streamlit as st
-import numpy as np
-import pandas as pd
-from modules.surfaces import make_grid, surface, default_domain
-from modules.geometry import compute_geometry, apply_variation, total_area
-from modules.plotter import make_plot
-
-st.set_page_config(page_title="Geometria Diferencial Interativa", layout="wide")
-
-SURFACES = [
-    "Plano",
-    "Esfera",
-    "Cilindro",
-    "Catenoide",
-    "Helicoide",
-    "Scherk",
-    "Enneper",
-    "Toro",
-    "Personalizada",
-]
 
 
-def closest_index(grid, value):
-    line = grid[:, 0] if grid.ndim == 2 else grid
-    return int(np.argmin(np.abs(line - value)))
+# ============================================================
+# CONFIGURAÇÃO GERAL DA PÁGINA
+# ============================================================
 
-
-def fmt(x, digits=6):
-    try:
-        x = float(x)
-        if not np.isfinite(x):
-            return "não definido"
-        if abs(x) >= 10000 or (0 < abs(x) < 1e-4):
-            return f"{x:.{digits}e}"
-        return f"{x:.{digits}f}"
-    except Exception:
-        return "não definido"
-
-
-def point_table(geom, i, j):
-    data = {
-        "Coeficiente": ["E", "F", "G", "e", "f", "g", "H(P)", "K(P)", "dA(P)"],
-        "Valor numérico no ponto P": [
-            fmt(geom["E"][i, j]),
-            fmt(geom["F"][i, j]),
-            fmt(geom["G"][i, j]),
-            fmt(geom["e"][i, j]),
-            fmt(geom["f"][i, j]),
-            fmt(geom["g"][i, j]),
-            fmt(geom["H"][i, j]),
-            fmt(geom["K"][i, j]),
-            fmt(geom["area_density"][i, j]),
-        ],
-    }
-    return pd.DataFrame(data)
-
-
-st.title("Geometria Diferencial Interativa")
-st.caption(
-    "Visualização de superfícies, curvatura média, curvatura gaussiana e variações normais de área."
+st.set_page_config(
+    page_title="Geometria Diferencial Interativa",
+    page_icon="📐",
+    layout="wide",
+    initial_sidebar_state="expanded",
 )
 
+
+# ============================================================
+# ESTILO DA PLATAFORMA
+# ============================================================
+
+st.markdown(
+    """
+    <style>
+
+    /* Título principal */
+    .main-title {
+        font-size: 3.2rem;
+        font-weight: 700;
+        text-align: center;
+        margin-top: 1rem;
+        margin-bottom: 0.5rem;
+    }
+
+    /* Subtítulo */
+    .subtitle {
+        font-size: 1.3rem;
+        text-align: center;
+        color: #666666;
+        margin-bottom: 2.5rem;
+    }
+
+    /* Caixa de apresentação */
+    .presentation-box {
+        padding: 2rem;
+        border-radius: 12px;
+        background-color: rgba(128, 128, 128, 0.08);
+        margin-top: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    /* Títulos das seções */
+    .section-title {
+        font-size: 2rem;
+        font-weight: 600;
+        margin-top: 2rem;
+        margin-bottom: 1rem;
+    }
+
+    /* Cartões */
+    .card {
+        padding: 1.5rem;
+        border-radius: 12px;
+        background-color: rgba(128, 128, 128, 0.08);
+        min-height: 220px;
+        margin-bottom: 1rem;
+    }
+
+    .card-title {
+        font-size: 1.35rem;
+        font-weight: 600;
+        margin-bottom: 0.8rem;
+    }
+
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+
+# ============================================================
+# BARRA LATERAL
+# ============================================================
+
 with st.sidebar:
-    st.header("1. Superfície")
-    name = st.selectbox("Escolha a superfície", SURFACES)
 
-    params = {}
-    if name in ["Esfera", "Cilindro", "Toro"]:
-        params["R"] = st.slider("Raio principal R", 0.2, 3.0, 1.0, 0.1)
-    if name in ["Catenoide", "Helicoide", "Scherk"]:
-        params["a"] = st.slider("Parâmetro a", 0.2, 3.0, 1.0, 0.1)
-    if name == "Toro":
-        params["r"] = st.slider("Raio menor r", 0.1, 1.5, 0.35, 0.05)
+    st.title("📐 Geometria Diferencial")
 
-    custom = {}
-    if name == "Personalizada":
-        st.markdown(
-            "Use expressões em `u` e `v`: `sin`, `cos`, `cosh`, `sinh`, `exp`, `log`, `sqrt`, `pi`."
-        )
-        custom["x"] = st.text_input("x(u,v)", "u")
-        custom["y"] = st.text_input("y(u,v)", "v")
-        custom["z"] = st.text_input("z(u,v)", "sin(u)*cos(v)")
-
-    st.header("2. Domínio")
-    u0, u1, v0, v1 = default_domain(name)
-    umin = st.number_input("u mínimo", value=float(u0))
-    umax = st.number_input("u máximo", value=float(u1))
-    vmin = st.number_input("v mínimo", value=float(v0))
-    vmax = st.number_input("v máximo", value=float(v1))
-    n = st.slider("Resolução", 35, 140, 75, 5)
-
-    st.header("3. Ponto de leitura")
-    st.caption("As curvaturas são calculadas pontualmente. Escolha o ponto P=(u,v).")
-    uP = st.slider("u do ponto P", float(umin), float(umax), float((umin + umax) / 2))
-    vP = st.slider("v do ponto P", float(vmin), float(vmax), float((vmin + vmax) / 2))
-
-    st.header("4. Variação normal")
-    h_expr = st.text_input("h(u,v)", "sin(u)*cos(v)")
-    t = st.slider("t em X_t = X + t h N", -1.0, 1.0, 0.0, 0.05)
-
-    st.header("5. Visualização")
-    color_by = st.selectbox(
-        "Colorir por",
-        [
-            "H_t: curvatura média da superfície variada",
-            "K_t: curvatura gaussiana da superfície variada",
-            "H: curvatura média da superfície inicial",
-            "K: curvatura gaussiana da superfície inicial",
-            "Densidade de área dA_t",
-            "h(u,v)",
-            "z",
-        ],
+    st.markdown(
+        """
+        Esta plataforma foi desenvolvida para o estudo
+        interativo de conceitos de Geometria Diferencial.
+        """
     )
-    show_normals = st.checkbox("Mostrar campo normal", value=False)
-    show_tangent = st.checkbox("Mostrar direções tangentes em P", value=True)
 
-try:
-    if umax <= umin or vmax <= vmin:
-        raise ValueError("O domínio precisa satisfazer u mínimo < u máximo e v mínimo < v máximo.")
+    st.divider()
 
-    U, V = make_grid(umin, umax, vmin, vmax, n)
-    du = (umax - umin) / (n - 1)
-    dv = (vmax - vmin) / (n - 1)
+    st.subheader("Percurso de estudo")
 
-    X = surface(name, U, V, params, custom)
-    geom = compute_geometry(X, du, dv)
+    st.markdown(
+        """
+        **1. Curvas**
 
-    Xt, h, h_parsed = apply_variation(X, geom["N"], U, V, h_expr, t)
-    geom_t = compute_geometry(Xt, du, dv)
+        **2. Superfícies Regulares**
 
-    area0 = total_area(geom["area_density"], du, dv)
-    areat = total_area(geom_t["area_density"], du, dv)
+        **3. Plano Tangente e Normal**
 
-    iP = closest_index(U, uP)
-    jP = closest_index(V.T, vP)
-    uP_grid = float(U[iP, jP])
-    vP_grid = float(V[iP, jP])
-    P0 = X[iP, jP]
-    Pt = Xt[iP, jP]
+        **4. Primeira Forma Fundamental**
+
+        **5. Segunda Forma Fundamental**
+
+        **6. Curvaturas**
+
+        **7. Superfícies Mínimas**
+
+        **8. Variação da Área**
+        """
+    )
+
+    st.divider()
+
+    st.caption(
+        "Plataforma educacional para visualização "
+        "e exploração de conceitos de Geometria Diferencial."
+    )
+
+
+# ============================================================
+# CABEÇALHO
+# ============================================================
+
+st.markdown(
+    """
+    <div class="main-title">
+        Geometria Diferencial Interativa
+    </div>
+
+    <div class="subtitle">
+        Uma plataforma para visualizar, explorar e compreender
+        conceitos de Geometria Diferencial
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+
+
+# ============================================================
+# APRESENTAÇÃO
+# ============================================================
+
+st.markdown(
+    """
+    <div class="presentation-box">
+
+    A <b>Geometria Diferencial</b> estuda objetos geométricos
+    utilizando ferramentas do Cálculo Diferencial e Integral.
+
+    Nesta plataforma, conceitos matemáticos são apresentados
+    juntamente com visualizações computacionais interativas.
+
+    O estudante poderá modificar parâmetros, escolher pontos,
+    alterar superfícies e observar, em tempo real, como diferentes
+    quantidades geométricas se comportam.
+
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+
+
+# ============================================================
+# OBJETIVO
+# ============================================================
+
+st.markdown(
+    '<div class="section-title">Objetivo da plataforma</div>',
+    unsafe_allow_html=True,
+)
+
+st.write(
+    """
+    O objetivo desta plataforma é proporcionar uma abordagem
+    visual, interativa e computacional para o estudo da
+    Geometria Diferencial.
+
+    Ao longo dos módulos, o estudante poderá relacionar
+    definições e resultados teóricos com representações
+    gráficas tridimensionais e experimentos computacionais.
+    """
+)
+
+
+# ============================================================
+# TRÊS PILARES
+# ============================================================
+
+st.markdown(
+    '<div class="section-title">Como funciona a plataforma?</div>',
+    unsafe_allow_html=True,
+)
+
+col1, col2, col3 = st.columns(3)
+
+
+with col1:
+
+    st.markdown(
+        """
+        <div class="card">
+
+        <div class="card-title">
+        📖 Teoria
+        </div>
+
+        Apresentação das definições, conceitos,
+        propriedades e resultados fundamentais
+        da Geometria Diferencial.
+
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+with col2:
+
+    st.markdown(
+        """
+        <div class="card">
+
+        <div class="card-title">
+        🧮 Cálculos
+        </div>
+
+        Cálculo de quantidades geométricas como
+        vetores tangentes, vetores normais,
+        formas fundamentais e curvaturas.
+
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+with col3:
+
+    st.markdown(
+        """
+        <div class="card">
+
+        <div class="card-title">
+        🌐 Visualização
+        </div>
+
+        Exploração interativa de curvas e
+        superfícies tridimensionais por meio
+        de gráficos computacionais.
+
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+# ============================================================
+# PERCURSO MATEMÁTICO
+# ============================================================
+
+st.markdown(
+    '<div class="section-title">Percurso matemático</div>',
+    unsafe_allow_html=True,
+)
+
+st.write(
+    """
+    A organização dos conteúdos segue uma progressão natural
+    dos conceitos fundamentais da Geometria Diferencial.
+    """
+)
+
+
+# ============================================================
+# MÓDULO 1
+# ============================================================
+
+with st.expander("1. Curvas em R³"):
+
+    st.write(
+        """
+        Neste módulo serão estudadas curvas parametrizadas
+        no espaço tridimensional.
+        """
+    )
+
+    st.markdown(
+        """
+        **Principais conceitos:**
+
+        - curvas parametrizadas;
+        - curvas regulares;
+        - vetor tangente;
+        - comprimento de arco;
+        - triedro de Frenet;
+        - curvatura;
+        - torção.
+        """
+    )
+
+
+# ============================================================
+# MÓDULO 2
+# ============================================================
+
+with st.expander("2. Superfícies Regulares"):
+
+    st.write(
+        """
+        Introdução às superfícies parametrizadas e às
+        condições de regularidade.
+        """
+    )
+
+    st.markdown(
+        """
+        **Principais conceitos:**
+
+        - parametrização de superfícies;
+        - superfícies regulares;
+        - curvas coordenadas;
+        - derivadas parciais da parametrização.
+        """
+    )
+
+
+# ============================================================
+# MÓDULO 3
+# ============================================================
+
+with st.expander("3. Plano Tangente e Vetor Normal"):
+
+    st.write(
+        """
+        Estudo da geometria local de uma superfície
+        em torno de um ponto.
+        """
+    )
+
+    st.markdown(
+        """
+        **Principais conceitos:**
+
+        - vetores tangentes;
+        - plano tangente;
+        - produto vetorial;
+        - vetor normal unitário;
+        - campo normal.
+        """
+    )
+
+
+# ============================================================
+# MÓDULO 4
+# ============================================================
+
+with st.expander("4. Primeira Forma Fundamental"):
+
+    st.write(
+        """
+        Estudo das propriedades métricas das superfícies.
+        """
+    )
+
+    st.markdown(
+        """
+        **Principais conceitos:**
+
+        - coeficientes E, F e G;
+        - comprimento de curvas;
+        - ângulo entre curvas;
+        - área de superfícies.
+        """
+    )
+
+
+# ============================================================
+# MÓDULO 5
+# ============================================================
+
+with st.expander("5. Segunda Forma Fundamental"):
+
+    st.write(
+        """
+        Introdução ao estudo da curvatura das superfícies.
+        """
+    )
+
+    st.markdown(
+        """
+        **Principais conceitos:**
+
+        - aplicação normal de Gauss;
+        - operador de forma;
+        - coeficientes e, f e g;
+        - curvaturas principais.
+        """
+    )
+
+
+# ============================================================
+# MÓDULO 6
+# ============================================================
+
+with st.expander("6. Curvaturas"):
+
+    st.write(
+        """
+        Estudo das principais medidas de curvatura
+        associadas a uma superfície.
+        """
+    )
 
     st.markdown(
         r"""
-Nesta versão, o estudante escolhe uma superfície parametrizada $X(u,v)$, altera parâmetros,
-seleciona um ponto $P=(u,v)$ e aplica uma variação normal
+        **Principais conceitos:**
 
-$$
-X_t(u,v)=X(u,v)+t\,h(u,v)N(u,v).
-$$
-
-Atenção: $H$ e $K$ são funções pontuais. Portanto, os valores numéricos exibidos no painel
-correspondem ao ponto escolhido $P$.
-"""
+        - curvaturas principais \(k_1\) e \(k_2\);
+        - curvatura gaussiana \(K\);
+        - curvatura média \(H\);
+        - classificação dos pontos de uma superfície.
+        """
     )
 
-    col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Área aproximada de X", f"{area0:.4f}")
-    col2.metric("Área aproximada de X_t", f"{areat:.4f}", f"{areat - area0:+.4f}")
-    col3.metric("H_t(P)", fmt(geom_t["H"][iP, jP]))
-    col4.metric("K_t(P)", fmt(geom_t["K"][iP, jP]))
 
-    if color_by.startswith("H_t"):
-        C = geom_t["H"]
-        ct = "H_t"
-    elif color_by.startswith("K_t"):
-        C = geom_t["K"]
-        ct = "K_t"
-    elif color_by.startswith("H:"):
-        C = geom["H"]
-        ct = "H"
-    elif color_by.startswith("K:"):
-        C = geom["K"]
-        ct = "K"
-    elif color_by.startswith("Densidade"):
-        C = geom_t["area_density"]
-        ct = "dA_t"
-    elif color_by.startswith("h"):
-        C = h
-        ct = "h"
-    else:
-        C = Xt[..., 2]
-        ct = "z"
+# ============================================================
+# MÓDULO 7
+# ============================================================
 
-    left, right = st.columns([2.2, 1])
+with st.expander("7. Superfícies Mínimas"):
 
-    with left:
-        st.plotly_chart(
-            make_plot(
-                U,
-                V,
-                Xt,
-                C,
-                f"{name}: superfície variada X_t",
-                ct,
-                show_normals=show_normals,
-                N=geom_t["N"],
-                stride=max(5, n // 12),
-                point_index=(iP, jP),
-                show_tangent=show_tangent,
-                Xu=geom_t["Xu"],
-                Xv=geom_t["Xv"],
-            ),
-            use_container_width=True,
-        )
-
-    with right:
-        st.subheader("Ponto escolhido")
-        st.write(rf"Parâmetros: $u={fmt(uP_grid,4)}$, $v={fmt(vP_grid,4)}$")
-        st.write(
-            rf"$X(u,v)=({fmt(P0[0],4)}, {fmt(P0[1],4)}, {fmt(P0[2],4)})$"
-        )
-        st.write(
-            rf"$X_t(u,v)=({fmt(Pt[0],4)}, {fmt(Pt[1],4)}, {fmt(Pt[2],4)})$"
-        )
-        st.write(rf"$h(u,v)={h_parsed}$")
-        st.write(rf"$h(P)={fmt(h[iP,jP])}$")
-
-        st.subheader("Valores pontuais em P")
-        st.dataframe(point_table(geom_t, iP, jP), hide_index=True, use_container_width=True)
-
-        st.subheader("Fórmulas usadas")
-        st.latex(r"E=\langle X_u,X_u\rangle,\quad F=\langle X_u,X_v\rangle,\quad G=\langle X_v,X_v\rangle")
-        st.latex(r"e=\langle X_{uu},N\rangle,\quad f=\langle X_{uv},N\rangle,\quad g=\langle X_{vv},N\rangle")
-        st.latex(r"H=\frac{eG-2fF+gE}{2(EG-F^2)}")
-        st.latex(r"K=\frac{eg-f^2}{EG-F^2}")
-
-    st.subheader("Interpretação")
     st.write(
-        "A coloração mostra a distribuição da quantidade escolhida sobre a superfície. "
-        "Assim, quando colorimos por H ou K, não estamos mostrando um único número, mas sim uma função definida ponto a ponto."
+        """
+        Estudo das superfícies cuja curvatura média
+        é identicamente nula.
+        """
     )
+
+    st.markdown(
+        r"""
+        **Principais conceitos:**
+
+        - definição de superfície mínima;
+        - condição \(H=0\);
+        - plano;
+        - catenoide;
+        - helicoide;
+        - superfície de Enneper;
+        - superfície de Scherk.
+        """
+    )
+
+
+# ============================================================
+# MÓDULO 8
+# ============================================================
+
+with st.expander("8. Variação da Área"):
+
     st.write(
-        "Para uma superfície mínima, espera-se que H seja aproximadamente zero em todos os pontos interiores. "
-        "Diferenças pequenas podem aparecer por erro numérico, baixa resolução ou efeitos de borda."
+        """
+        Estudo do comportamento da área de uma superfície
+        submetida a deformações normais.
+        """
     )
 
-    st.subheader("Área aproximada em função de t")
-    tmin, tmax = -1.0, 1.0
-    ts = np.linspace(tmin, tmax, 31)
-    vals = []
-    hp_vals = []
-    kp_vals = []
-    for tau in ts:
-        Xtau, _, _ = apply_variation(X, geom["N"], U, V, h_expr, float(tau))
-        gtau = compute_geometry(Xtau, du, dv)
-        vals.append(total_area(gtau["area_density"], du, dv))
-        hp_vals.append(float(gtau["H"][iP, jP]))
-        kp_vals.append(float(gtau["K"][iP, jP]))
+    st.markdown(
+        r"""
+        **Principais conceitos:**
 
-    df_area = pd.DataFrame(
-        {"t": ts, "Área aproximada": vals, "H_t(P)": hp_vals, "K_t(P)": kp_vals}
-    ).set_index("t")
-    st.line_chart(df_area[["Área aproximada"]])
+        - variações normais;
+        - família de superfícies \(X_t\);
+        - função de variação \(h(u,v)\);
+        - primeira variação da área;
+        - relação entre superfícies mínimas e pontos críticos
+          do funcional área.
+        """
+    )
 
-    with st.expander("Ver tabela numérica da variação"):
-        st.dataframe(df_area.reset_index(), use_container_width=True)
 
-except Exception as e:
-    st.error("Não foi possível gerar a superfície. Verifique domínio, parâmetros e expressões digitadas.")
-    st.exception(e)
+# ============================================================
+# EXPERIÊNCIA INTERATIVA
+# ============================================================
+
+st.markdown(
+    '<div class="section-title">O que o estudante poderá fazer?</div>',
+    unsafe_allow_html=True,
+)
+
+st.markdown(
+    """
+    Ao longo da plataforma será possível:
+
+    - escolher diferentes curvas e superfícies;
+    - alterar parâmetros das parametrizações;
+    - modificar os domínios dos parâmetros;
+    - selecionar pontos sobre as superfícies;
+    - visualizar vetores tangentes;
+    - visualizar o plano tangente;
+    - visualizar o vetor normal;
+    - calcular as formas fundamentais;
+    - calcular a curvatura média;
+    - calcular a curvatura gaussiana;
+    - visualizar a distribuição das curvaturas sobre a superfície;
+    - estudar superfícies mínimas;
+    - aplicar variações normais;
+    - modificar a função \(h(u,v)\);
+    - observar a deformação da superfície em tempo real.
+    """
+)
+
+
+# ============================================================
+# OBSERVAÇÃO FINAL
+# ============================================================
+
+st.info(
+    """
+    Utilize o menu lateral para acompanhar a organização dos conteúdos.
+
+    À medida que os módulos forem desenvolvidos, novas páginas
+    interativas serão acrescentadas à plataforma.
+    """
+)
+
+
+# ============================================================
+# RODAPÉ
+# ============================================================
+
+st.divider()
+
+st.markdown(
+    """
+    <div style="text-align: center; color: #777777;">
+
+    <b>Geometria Diferencial Interativa</b>
+
+    Plataforma educacional para o estudo e visualização
+    de conceitos de Geometria Diferencial.
+
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
