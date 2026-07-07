@@ -173,6 +173,7 @@ def add_arrow(fig, p, v, label, scale=0.5):
             z=[p[2], q[2]],
             mode="lines",
             name=label,
+            showlegend=True,
             line=dict(width=7),
         )
     )
@@ -189,7 +190,7 @@ def add_arrow(fig, p, v, label, scale=0.5):
             sizeref=0.18,
             anchor="tip",
             showscale=False,
-            name=label,
+            showlegend=False,
         )
     )
 
@@ -205,7 +206,8 @@ def make_plot(X, U, V, i0, j0, Xu, Xv, N, show_vectors=True, show_coord=True):
             opacity=0.75,
             colorscale="Viridis",
             showscale=False,
-            name="superfície",
+            name="Superfície",
+            showlegend=True,
         )
     )
 
@@ -217,8 +219,8 @@ def make_plot(X, U, V, i0, j0, Xu, Xv, N, show_vectors=True, show_coord=True):
             y=[p[1]],
             z=[p[2]],
             mode="markers",
-            name="ponto escolhido",
-            marker=dict(size=6),
+            name="Ponto X(u₀,v₀)",
+            marker=dict(size=7),
         )
     )
 
@@ -229,29 +231,34 @@ def make_plot(X, U, V, i0, j0, Xu, Xv, N, show_vectors=True, show_coord=True):
                 y=X[:, j0, 1],
                 z=X[:, j0, 2],
                 mode="lines",
-                name="curva u ↦ X(u,v₀)",
+                name="Curva u ↦ X(u,v₀)",
                 line=dict(width=6),
             )
         )
+
         fig.add_trace(
             go.Scatter3d(
                 x=X[i0, :, 0],
                 y=X[i0, :, 1],
                 z=X[i0, :, 2],
                 mode="lines",
-                name="curva v ↦ X(u₀,v)",
+                name="Curva v ↦ X(u₀,v)",
                 line=dict(width=6),
             )
         )
 
     if show_vectors:
-        add_arrow(fig, p, Xu[i0, j0], "X_u")
-        add_arrow(fig, p, Xv[i0, j0], "X_v")
-        add_arrow(fig, p, N[i0, j0], "N")
+        add_arrow(fig, p, Xu[i0, j0], "Xᵤ(u₀,v₀)")
+        add_arrow(fig, p, Xv[i0, j0], "Xᵥ(u₀,v₀)")
+        add_arrow(fig, p, N[i0, j0], "N(u₀,v₀)")
 
     fig.update_layout(
         height=650,
         margin=dict(l=0, r=0, t=40, b=0),
+        legend=dict(
+            font=dict(size=15),
+            itemsizing="constant",
+        ),
         scene=dict(
             xaxis_title="x",
             yaxis_title="y",
@@ -261,7 +268,6 @@ def make_plot(X, U, V, i0, j0, Xu, Xv, N, show_vectors=True, show_coord=True):
     )
 
     return fig
-
 
 st.title("Módulo 2 — Superfícies Regulares")
 
