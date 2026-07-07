@@ -8,7 +8,8 @@ from fractions import Fraction
 st.set_page_config(page_title="Curvas em R³", page_icon="📈", layout="wide")
 
 
-st.title("📐 Geometria Diferencial")
+with st.sidebar:
+    st.title("📐 Geometria Diferencial")
     st.page_link("app.py", label="🏠 Início")
     st.page_link("pages/01_Curvas.py", label="1. Curvas em R³")
     st.page_link(
@@ -22,7 +23,6 @@ st.title("📐 Geometria Diferencial")
     st.markdown("6. Curvaturas")
     st.markdown("7. Superfícies Mínimas")
     st.markdown("8. Variação da Área")
-
 def fmt(x, digits=5):
     try:
         x = float(x)
