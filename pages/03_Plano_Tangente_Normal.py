@@ -326,7 +326,7 @@ def make_plot(
     return fig
 
 
-st.title("Módulo 3 — Plano Tangente e Vetor Normal")
+st.title("Plano Tangente e Vetor Normal")
 
 st.write("Neste módulo estudamos a geometria local de uma superfície regular em torno de um ponto.")
 
