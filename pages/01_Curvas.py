@@ -267,7 +267,21 @@ else:
     N = np.zeros(3)
 
 B = safe_unit(np.cross(T, N))
+st.subheader("Curva escolhida")
 
+st.write("A curva visualizada no gráfico é dada por:")
+st.latex(curve_latex(name))
+
+if name in ["Circunferência", "Hélice circular"]:
+    st.write(
+        f"Neste exemplo, o parâmetro escolhido é "
+        f"a = {fmt(a, 2)}."
+    )
+
+if name == "Hélice circular":
+    st.write(
+        f"O parâmetro b = {fmt(b, 2)} controla a inclinação vertical da hélice."
+    )
 left, right = st.columns([2.2, 1])
 
 with left:
