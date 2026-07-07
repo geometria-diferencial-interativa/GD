@@ -322,7 +322,7 @@ with st.sidebar:
 
     n = st.slider("Resolução", 40, 160, 80, 10)
 
-    st.header("Ponto de leitura")
+    st.header("Ponto do Domínio U")
 
     u0 = st.slider(
         "Escolha u₀",
