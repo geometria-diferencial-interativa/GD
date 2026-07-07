@@ -284,8 +284,7 @@ with st.sidebar:
 
         st.header("Ponto de leitura")
     
-    
-    t0 = st.slider(
+        t0 = st.slider(
         "Escolha o ponto t₀",
         float(tmin),
         float(tmax),
