@@ -10,6 +10,20 @@ st.set_page_config(
     layout="wide"
 )
 
+with st.sidebar:
+
+    st.title("📐 Geometria Diferencial")
+
+    st.page_link("app.py", label="🏠 Início")
+    st.page_link("pages/01_Curvas.py", label="1. Curvas em R³")
+
+    st.markdown("2. Superfícies Regulares")
+    st.markdown("3. Plano Tangente e Normal")
+    st.markdown("4. Primeira Forma Fundamental")
+    st.markdown("5. Segunda Forma Fundamental")
+    st.markdown("6. Curvaturas")
+    st.markdown("7. Superfícies Mínimas")
+    st.markdown("8. Variação da Área")
 
 def fmt(x, digits=5):
     try:
