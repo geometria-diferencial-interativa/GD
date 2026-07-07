@@ -537,7 +537,8 @@ st.markdown(
     <b>Geometria Diferencial Interativa</b>
 
     Plataforma educacional para o estudo e visualização
-    de conceitos de Geometria Diferencial.
+    de conceitos de Geometria Diferencial. 
+    Esta plataforma está sendo desenvolvida pela Profª Drª Jackeline Conrado e a mestranda Chryslane Louzada
 
     </div>
     """,
