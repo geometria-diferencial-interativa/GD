@@ -10,11 +10,13 @@ st.set_page_config(
     layout="wide"
 )
 
-with st.sidebar:
 
+with st.sidebar:
     st.title("📐 Geometria Diferencial")
 
+    st.page_link("app.py", label="🏠 Início")
     st.page_link("pages/01_Curvas.py", label="1. Curvas em R³")
+
     st.markdown("2. Superfícies Regulares")
     st.markdown("3. Plano Tangente e Normal")
     st.markdown("4. Primeira Forma Fundamental")
@@ -22,6 +24,7 @@ with st.sidebar:
     st.markdown("6. Curvaturas")
     st.markdown("7. Superfícies Mínimas")
     st.markdown("8. Variação da Área")
+
 
 def fmt(x, digits=5):
     try:
@@ -80,11 +83,12 @@ def curvature(alpha1, alpha2):
     cross = np.cross(alpha1, alpha2)
     numerator = norm(cross)
     denominator = norm(alpha1) ** 3
+
     return np.divide(
         numerator,
         denominator,
         out=np.full_like(numerator, np.nan),
-        where=denominator > 1e-10
+        where=denominator > 1e-10,
     )
 
 
@@ -92,11 +96,46 @@ def torsion(alpha1, alpha2, alpha3):
     cross = np.cross(alpha1, alpha2)
     numerator = np.einsum("ij,ij->i", cross, alpha3)
     denominator = norm(cross) ** 2
+
     return np.divide(
         numerator,
         denominator,
         out=np.full_like(numerator, np.nan),
-        where=denominator > 1e-10
+        where=denominator > 1e-10,
+    )
+
+
+def add_arrow(fig, p, v, name, scale=1.0):
+    if np.linalg.norm(v) < 1e-10:
+        return
+
+    q = p + scale * v
+
+    fig.add_trace(
+        go.Scatter3d(
+            x=[p[0], q[0]],
+            y=[p[1], q[1]],
+            z=[p[2], q[2]],
+            mode="lines",
+            name=name,
+            line=dict(width=7),
+        )
+    )
+
+    fig.add_trace(
+        go.Cone(
+            x=[q[0]],
+            y=[q[1]],
+            z=[q[2]],
+            u=[v[0]],
+            v=[v[1]],
+            w=[v[2]],
+            sizemode="absolute",
+            sizeref=0.25,
+            anchor="tip",
+            showscale=False,
+            name=name,
+        )
     )
 
 
@@ -126,25 +165,9 @@ def make_plot(alpha, p, T, N, B, show_frame=True):
     )
 
     if show_frame:
-        scale = 0.8
-
-        vectors = [
-            ("T: tangente", T),
-            ("N: normal", N),
-            ("B: binormal", B),
-        ]
-
-        for label, v in vectors:
-            fig.add_trace(
-                go.Scatter3d(
-                    x=[p[0], p[0] + scale * v[0]],
-                    y=[p[1], p[1] + scale * v[1]],
-                    z=[p[2], p[2] + scale * v[2]],
-                    mode="lines+markers",
-                    name=label,
-                    line=dict(width=5),
-                )
-            )
+        add_arrow(fig, p, T, "T: tangente", scale=0.9)
+        add_arrow(fig, p, N, "N: normal", scale=0.9)
+        add_arrow(fig, p, B, "B: binormal", scale=0.9)
 
     fig.update_layout(
         height=650,
@@ -162,25 +185,16 @@ def make_plot(alpha, p, T, N, B, show_frame=True):
 
 st.title("Módulo 1 — Curvas em R³")
 
-st.markdown(
-    r"""
-Neste módulo estudamos curvas parametrizadas
+st.write("Neste módulo estudamos curvas parametrizadas:")
+st.latex(r"\alpha:I\subset\mathbb{R}\longrightarrow \mathbb{R}^3")
+st.latex(r"\alpha(t)=(x(t),y(t),z(t))")
 
-\[
-\alpha:I\subset\mathbb{R}\longrightarrow \mathbb{R}^3,
-\qquad
-\alpha(t)=(x(t),y(t),z(t)).
-\]
+st.write("A curva é regular quando:")
+st.latex(r"\alpha'(t)\neq 0")
 
-A curva é regular quando
-
-\[
-\alpha'(t)\neq 0.
-\]
-
-A partir das derivadas de \(\alpha\), calculamos vetor tangente, curvatura,
-torção e o triedro de Frenet.
-"""
+st.write(
+    "A partir das derivadas de uma curva regular, podemos estudar o vetor tangente, "
+    "a curvatura, a torção e o triedro de Frenet."
 )
 
 with st.sidebar:
@@ -209,7 +223,12 @@ with st.sidebar:
 
     st.header("Ponto de leitura")
 
-    t0 = st.slider("Escolha o ponto t₀", float(tmin), float(tmax), float((tmin + tmax) / 2))
+    t0 = st.slider(
+        "Escolha o ponto t₀",
+        float(tmin),
+        float(tmax),
+        float((tmin + tmax) / 2),
+    )
 
     show_frame = st.checkbox("Mostrar triedro de Frenet", value=True)
 
@@ -237,6 +256,7 @@ v2 = alpha2[i0]
 T = safe_unit(v1)
 
 k0 = kappa[i0]
+
 if np.isfinite(k0) and k0 > 1e-8:
     N = safe_unit(v2)
 else:
@@ -249,7 +269,7 @@ left, right = st.columns([2.2, 1])
 with left:
     st.plotly_chart(
         make_plot(alpha, p, T, N, B, show_frame),
-        use_container_width=True
+        use_container_width=True,
     )
 
 with right:
