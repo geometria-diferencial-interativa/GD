@@ -198,6 +198,10 @@ def add_arrow(fig, p, v, label, scale=0.5):
 def make_plot(X, U, V, i0, j0, Xu, Xv, N, show_vectors=True, show_coord=True):
     fig = go.Figure()
 
+    # ============================================================
+    # SUPERFÍCIE
+    # ============================================================
+
     fig.add_trace(
         go.Surface(
             x=X[..., 0],
@@ -210,6 +214,10 @@ def make_plot(X, U, V, i0, j0, Xu, Xv, N, show_vectors=True, show_coord=True):
             showlegend=True,
         )
     )
+
+    # ============================================================
+    # PONTO ESCOLHIDO
+    # ============================================================
 
     p = X[i0, j0]
 
@@ -224,7 +232,13 @@ def make_plot(X, U, V, i0, j0, Xu, Xv, N, show_vectors=True, show_coord=True):
         )
     )
 
+    # ============================================================
+    # CURVAS COORDENADAS
+    # ============================================================
+
     if show_coord:
+
+        # Curva obtida mantendo v = v₀ constante
         fig.add_trace(
             go.Scatter3d(
                 x=X[:, j0, 0],
@@ -236,6 +250,7 @@ def make_plot(X, U, V, i0, j0, Xu, Xv, N, show_vectors=True, show_coord=True):
             )
         )
 
+        # Curva obtida mantendo u = u₀ constante
         fig.add_trace(
             go.Scatter3d(
                 x=X[i0, :, 0],
@@ -247,18 +262,81 @@ def make_plot(X, U, V, i0, j0, Xu, Xv, N, show_vectors=True, show_coord=True):
             )
         )
 
+    # ============================================================
+    # VETORES
+    # ============================================================
+
     if show_vectors:
-        add_arrow(fig, p, Xu[i0, j0], "Xᵤ(u₀,v₀)")
-        add_arrow(fig, p, Xv[i0, j0], "Xᵥ(u₀,v₀)")
-        add_arrow(fig, p, N[i0, j0], "N(u₀,v₀)")
+        add_arrow(
+            fig,
+            p,
+            Xu[i0, j0],
+            "Xᵤ(u₀,v₀)",
+        )
+
+        add_arrow(
+            fig,
+            p,
+            Xv[i0, j0],
+            "Xᵥ(u₀,v₀)",
+        )
+
+        add_arrow(
+            fig,
+            p,
+            N[i0, j0],
+            "N(u₀,v₀)",
+        )
+
+    # ============================================================
+    # CONFIGURAÇÕES DO GRÁFICO
+    # ============================================================
 
     fig.update_layout(
         height=650,
-        margin=dict(l=0, r=0, t=40, b=0),
-        legend=dict(
-            font=dict(size=15),
-            itemsizing="constant",
+
+        margin=dict(
+            l=0,
+            r=0,
+            t=40,
+            b=0,
         ),
+
+        # ========================================================
+        # LEGENDA
+        # ========================================================
+
+        legend=dict(
+
+            # Tamanho das letras
+            font=dict(
+                size=15,
+            ),
+
+            # Mantém tamanho uniforme dos símbolos
+            itemsizing="constant",
+
+            # Posição da legenda:
+            # canto inferior esquerdo
+            x=0.02,
+            y=0.02,
+
+            # Define o ponto de ancoragem
+            xanchor="left",
+            yanchor="bottom",
+
+            # Fundo branco semitransparente
+            bgcolor="rgba(255,255,255,0.75)",
+
+            # Pequena borda ao redor da legenda
+            bordercolor="rgba(100,100,100,0.4)",
+            borderwidth=1,
+        ),
+
+        # ========================================================
+        # CENA TRIDIMENSIONAL
+        # ========================================================
+
         scene=dict(
             xaxis_title="x",
             yaxis_title="y",
