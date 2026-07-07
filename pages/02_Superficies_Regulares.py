@@ -473,19 +473,19 @@ try:
 
     st.write("Os vetores tangentes às curvas coordenadas são:")
 
-st.latex(r"X_u=\frac{\partial X}{\partial u}")
-st.latex(r"X_v=\frac{\partial X}{\partial v}")
+    st.latex(r"X_u=\frac{\partial X}{\partial u}")
+    st.latex(r"X_v=\frac{\partial X}{\partial v}")
 
-st.write("A condição de regularidade é:")
+    st.write("A condição de regularidade é:")
 
-st.latex(r"X_u(u_0,v_0)\times X_v(u_0,v_0)\neq 0")
+    st.latex(r"X_u(u_0,v_0)\times X_v(u_0,v_0)\neq 0")
 
-st.write(
-    "Quando essa condição é satisfeita, os vetores "
-    r"$X_u(u_0,v_0)$ e $X_v(u_0,v_0)$ "
-    "são linearmente independentes e determinam o plano tangente "
-    "à superfície no ponto escolhido."
-)
+    st.write(
+        "Quando essa condição é satisfeita, os vetores "
+        r"$X_u(u_0,v_0)$ e $X_v(u_0,v_0)$ "
+        "são linearmente independentes e determinam o plano tangente "
+        "à superfície no ponto escolhido."
+    )
 
 except Exception as e:
     st.error("Não foi possível gerar a superfície. Verifique as expressões e o domínio escolhidos.")
