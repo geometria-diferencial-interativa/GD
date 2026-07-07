@@ -14,9 +14,7 @@ with st.sidebar:
 
     st.title("📐 Geometria Diferencial")
 
-    st.page_link("app.py", label="🏠 Início")
     st.page_link("pages/01_Curvas.py", label="1. Curvas em R³")
-
     st.markdown("2. Superfícies Regulares")
     st.markdown("3. Plano Tangente e Normal")
     st.markdown("4. Primeira Forma Fundamental")
