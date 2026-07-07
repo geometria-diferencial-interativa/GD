@@ -237,6 +237,7 @@ st.latex(r"\alpha(t)=(x(t),y(t),z(t))")
 st.write("A curva é regular quando:")
 st.latex(r"\alpha'(t)\neq 0")
 
+
 with st.sidebar:
     st.header("Curva")
 
@@ -291,6 +292,8 @@ with st.sidebar:
         float((tmin + tmax) / 2),
     )
 
+    show_frame = st.checkbox("Mostrar triedro de Frenet", value=True)
+
 
 if tmax <= tmin:
     st.error("O domínio precisa satisfazer t mínimo < t máximo.")
@@ -332,20 +335,20 @@ try:
 
     st.latex(curve_latex(name, custom))
 
-    st.markdown("Portanto, para cada valor de \(t\in I\), obtemos um ponto")
-    st.latex(r"\alpha(t)=(x(t),y(t),z(t))\in\mathbb{R}^3.")
+    st.markdown("Portanto, para cada valor de $t\\in I$, obtemos um ponto")
+    st.latex(r"\alpha(t)=(x(t),y(t),z(t))\in\mathbb{R}^3")
 
     if name == "Reta":
-        st.markdown("Nesta parametrização, \(t\) controla simultaneamente as três coordenadas.")
+        st.markdown("Nesta parametrização, $t$ controla simultaneamente as três coordenadas.")
     elif name == "Circunferência":
-        st.markdown(f"Nesta parametrização, \(a={fmt(a,2)}\) é o raio da circunferência.")
+        st.markdown(f"Nesta parametrização, $a={fmt(a,2)}$ é o raio da circunferência.")
     elif name == "Hélice circular":
         st.markdown(
-            f"Nesta parametrização, \(a={fmt(a,2)}\) é o raio da hélice "
-            f"e \(b={fmt(b,2)}\) controla a inclinação vertical."
+            f"Nesta parametrização, $a={fmt(a,2)}$ é o raio da hélice "
+            f"e $b={fmt(b,2)}$ controla a inclinação vertical."
         )
     elif name == "Parábola espacial":
-        st.markdown("Nesta parametrização, as coordenadas crescem como \(t\), \(t^2\) e \(t^3\).")
+        st.markdown("Nesta parametrização, as coordenadas crescem como $t$, $t^2$ e $t^3$.")
     elif name == "Curva toroidal":
         st.markdown("Nesta parametrização, a curva se enrola sobre uma região toroidal.")
     elif name == "Personalizada":
@@ -395,7 +398,6 @@ try:
         st.dataframe(df, hide_index=True, use_container_width=True)
 
     st.subheader("Fórmulas usadas")
-
     st.latex(r"T(t)=\frac{\alpha'(t)}{|\alpha'(t)|}")
     st.latex(r"\kappa(t)=\frac{|\alpha'(t)\times \alpha''(t)|}{|\alpha'(t)|^3}")
     st.latex(
