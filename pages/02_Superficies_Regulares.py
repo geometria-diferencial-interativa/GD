@@ -347,7 +347,7 @@ def make_plot(X, U, V, i0, j0, Xu, Xv, N, show_vectors=True, show_coord=True):
 
     return fig
 
-st.title("Módulo 2 — Superfícies Regulares")
+st.title("Superfícies Regulares")
 
 st.write("Neste módulo estudamos superfícies parametrizadas regulares:")
 st.latex(r"X:U\subset\mathbb{R}^2\longrightarrow \mathbb{R}^3")
