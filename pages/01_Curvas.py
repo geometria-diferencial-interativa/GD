@@ -5,11 +5,7 @@ import plotly.graph_objects as go
 from fractions import Fraction
 
 
-st.set_page_config(
-    page_title="Curvas em R³",
-    page_icon="📈",
-    layout="wide",
-)
+st.set_page_config(page_title="Curvas em R³", page_icon="📈", layout="wide")
 
 
 with st.sidebar:
@@ -253,8 +249,14 @@ with st.sidebar:
         ],
     )
 
-    a = st.slider("Parâmetro a", 0.2, 3.0, 1.0, 0.1)
-    b = st.slider("Parâmetro b", -2.0, 2.0, 0.5, 0.1)
+    a = 1.0
+    b = 0.5
+
+    if name in ["Circunferência", "Hélice circular"]:
+        a = st.slider("Parâmetro a", 0.2, 3.0, 1.0, 0.1)
+
+    if name == "Hélice circular":
+        b = st.slider("Parâmetro b", -2.0, 2.0, 0.5, 0.1)
 
     custom = {}
 
