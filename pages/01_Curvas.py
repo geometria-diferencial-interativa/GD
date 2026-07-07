@@ -58,30 +58,23 @@ def safe_unit(v):
     return v / n
 
 
-def curve(t, name, a=1.0, b=0.5):
+def curve_latex(name):
     if name == "Reta":
-        return np.column_stack((t, t, t))
+        return r"\alpha(t)=(t,t,t)"
 
     if name == "Circunferência":
-        return np.column_stack((a * np.cos(t), a * np.sin(t), 0 * t))
+        return r"\alpha(t)=(a\cos t,\;a\sin t,\;0)"
 
     if name == "Hélice circular":
-        return np.column_stack((a * np.cos(t), a * np.sin(t), b * t))
+        return r"\alpha(t)=(a\cos t,\;a\sin t,\;bt)"
 
     if name == "Parábola espacial":
-        return np.column_stack((t, t**2, t**3))
+        return r"\alpha(t)=(t,\;t^2,\;t^3)"
 
     if name == "Curva toroidal":
-        return np.column_stack(
-            (
-                (2 + np.cos(3 * t)) * np.cos(t),
-                (2 + np.cos(3 * t)) * np.sin(t),
-                np.sin(3 * t),
-            )
-        )
+        return r"\alpha(t)=((2+\cos(3t))\cos t,\;(2+\cos(3t))\sin t,\;\sin(3t))"
 
-    return np.column_stack((t, t, t))
-
+    return r"\alpha(t)=(x(t),y(t),z(t))"
 
 def derivatives(alpha, dt):
     alpha1 = np.gradient(alpha, dt, axis=0)
