@@ -97,8 +97,8 @@ with st.sidebar:
     st.subheader("Percurso de estudo")
 
     st.page_link("pages/01_Curvas.py", label="1. Curvas em R³")
+    st.page_link("pages/02_Superficies_Regulares.py", label="2. Superfícies Regulares")
 
-    st.markdown("2. Superfícies Regulares")
     st.markdown("3. Plano Tangente e Normal")
     st.markdown("4. Primeira Forma Fundamental")
     st.markdown("5. Segunda Forma Fundamental")
