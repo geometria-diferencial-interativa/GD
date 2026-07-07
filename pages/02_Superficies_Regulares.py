@@ -16,12 +16,8 @@ with st.sidebar:
 
     st.page_link("app.py", label="🏠 Início")
     st.page_link("pages/01_Curvas.py", label="1. Curvas em R³")
-    st.page_link(
-        "pages/02_Superficies_Regulares.py",
-        label="2. Superfícies Regulares"
-    )
-
-    st.markdown("3. Plano Tangente e Normal")
+    st.page_link("pages/02_Superficies_Regulares.py", label="2. Superfícies Regulares")
+    st.page_link("pages/03_Plano_Tangente_Normal.py", label="3. Plano Tangente e Vetor Normal")    
     st.markdown("4. Primeira Forma Fundamental")
     st.markdown("5. Segunda Forma Fundamental")
     st.markdown("6. Curvaturas")
