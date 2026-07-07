@@ -5,6 +5,7 @@ import streamlit as st
 # CONFIGURAÇÃO GERAL DA PÁGINA
 # ============================================================
 
+
 st.set_page_config(
     page_title="Geometria Diferencial Interativa",
     page_icon="📐",
