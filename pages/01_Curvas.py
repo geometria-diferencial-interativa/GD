@@ -264,34 +264,32 @@ with st.sidebar:
         custom["y"] = st.text_input("y(t)", "sin(t)")
         custom["z"] = st.text_input("z(t)", "t")
 
-        st.header("Domínio")
+    st.header("Domínio")
 
-        if name == "Parábola espacial":
-            default_tmin, default_tmax = -2.0, 2.0
-        elif name == "Circunferência":
-            default_tmin, default_tmax = 0.0, float(2 * np.pi)
-        elif name == "Hélice circular":
-            default_tmin, default_tmax = -6.0, 6.0
-        elif name == "Curva toroidal":
-            default_tmin, default_tmax = 0.0, float(2 * np.pi)
-        else:
-            default_tmin, default_tmax = -3.0, 3.0
+    if name == "Parábola espacial":
+        default_tmin, default_tmax = -2.0, 2.0
+    elif name == "Circunferência":
+        default_tmin, default_tmax = 0.0, float(2 * np.pi)
+    elif name == "Hélice circular":
+        default_tmin, default_tmax = -6.0, 6.0
+    elif name == "Curva toroidal":
+        default_tmin, default_tmax = 0.0, float(2 * np.pi)
+    else:
+        default_tmin, default_tmax = -3.0, 3.0
 
-        tmin = st.number_input("t mínimo", value=float(default_tmin))
-        tmax = st.number_input("t máximo", value=float(default_tmax))
+    tmin = st.number_input("t mínimo", value=float(default_tmin))
+    tmax = st.number_input("t máximo", value=float(default_tmax))
 
-        n = st.slider("Resolução", 100, 1000, 400, 50)
+    n = st.slider("Resolução", 100, 1000, 400, 50)
 
-        st.header("Ponto de leitura")
-    
-        t0 = st.slider(
+    st.header("Ponto de leitura")
+
+    t0 = st.slider(
         "Escolha o ponto t₀",
         float(tmin),
         float(tmax),
         float((tmin + tmax) / 2),
     )
-
-    show_frame = st.checkbox("Mostrar triedro de Frenet", value=True)
 
 
 if tmax <= tmin:
