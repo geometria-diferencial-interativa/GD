@@ -238,7 +238,7 @@ def make_plot(alpha, p, T, N, B, show_frame=True):
 
     return fig
 
-st.title("Módulo 1 — Curvas em R³")
+st.title("Curvas em R³")
 
 st.write("Neste módulo estudamos curvas parametrizadas:")
 st.latex(r"\alpha:I\subset\mathbb{R}\longrightarrow \mathbb{R}^3")
