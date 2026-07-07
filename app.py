@@ -82,28 +82,28 @@ st.markdown(
 # ============================================================
 
 with st.sidebar:
-
     st.title("📐 Geometria Diferencial")
 
-    st.markdown(
-        """
-        Esta plataforma foi desenvolvida para o estudo
-        interativo de conceitos de Geometria Diferencial.
-        """
+    st.page_link(
+        "app.py",
+        label="🏠 Início"
     )
 
-    st.divider()
+    st.page_link(
+        "pages/01_Curvas.py",
+        label="1. Curvas em R³"
+    )
 
-    st.subheader("Percurso de estudo")
-
-    st.page_link("app.py", label="🏠 Início")
-    st.page_link("pages/01_Curvas.py", label="1. Curvas em R³")
     st.page_link(
         "pages/02_Superficies_Regulares.py",
         label="2. Superfícies Regulares"
     )
 
-    st.markdown("3. Plano Tangente e Normal")
+    st.page_link(
+        "pages/03_Plano_Tangente_Normal.py",
+        label="3. Plano Tangente e Vetor Normal"
+    )
+
     st.markdown("4. Primeira Forma Fundamental")
     st.markdown("5. Segunda Forma Fundamental")
     st.markdown("6. Curvaturas")
