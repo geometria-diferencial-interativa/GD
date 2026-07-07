@@ -2,6 +2,7 @@ import streamlit as st
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
+from fractions import Fraction
 
 
 st.set_page_config(
@@ -34,7 +35,17 @@ def fmt(x, digits=5):
         return f"{x:.{digits}f}"
     except Exception:
         return "não definido"
+def frac(x, max_denominator=1000):
+    try:
+        x = float(x)
+        if not np.isfinite(x):
+            return r"\text{não definido}"
+        return str(Fraction(x).limit_denominator(max_denominator))
+    except Exception:
+        return r"\text{não definido}"
 
+def latex_number(x, digits=5):
+    return rf"\frac{{{Fraction(float(x)).limit_denominator(1000).numerator}}}{{{Fraction(float(x)).limit_denominator(1000).denominator}}}"
 
 def norm(v):
     return np.linalg.norm(v, axis=-1)
@@ -275,32 +286,53 @@ with left:
 with right:
     st.subheader("Valores no ponto escolhido")
 
-    st.write(rf"\(t_0={fmt(t[i0])}\)")
+    st.markdown("**Parâmetro escolhido:**")
+    st.latex(rf"t_0={fmt(t[i0])}")
 
-    st.write(
-        rf"\(\alpha(t_0)=({fmt(p[0])}, {fmt(p[1])}, {fmt(p[2])})\)"
+    st.markdown("**Ponto da curva:**")
+    st.latex(
+        rf"\alpha(t_0)=\left({fmt(p[0])},\,{fmt(p[1])},\,{fmt(p[2])}\right)"
     )
 
-    st.write(
-        rf"\(\alpha'(t_0)=({fmt(v1[0])}, {fmt(v1[1])}, {fmt(v1[2])})\)"
+    st.markdown("**Vetor velocidade:**")
+    st.latex(
+        rf"\alpha'(t_0)=\left({fmt(v1[0])},\,{fmt(v1[1])},\,{fmt(v1[2])}\right)"
     )
 
-    st.write(rf"\(|\alpha'(t_0)|={fmt(np.linalg.norm(v1))}\)")
+    st.markdown("**Norma da velocidade:**")
+    st.latex(
+        rf"|\alpha'(t_0)|={fmt(np.linalg.norm(v1))}"
+    )
 
-    st.metric("Curvatura κ(t₀)", fmt(kappa[i0]))
-    st.metric("Torção τ(t₀)", fmt(tau[i0]))
+    st.markdown("**Curvatura no ponto:**")
+    st.latex(
+        rf"\kappa(t_0)\approx {fmt(kappa[i0])}"
+    )
+    st.latex(
+        rf"\kappa(t_0)\approx {frac(kappa[i0])}"
+    )
+
+    st.markdown("**Torção no ponto:**")
+    st.latex(
+        rf"\tau(t_0)\approx {fmt(tau[i0])}"
+    )
+    st.latex(
+        rf"\tau(t_0)\approx {frac(tau[i0])}"
+    )
+
+    st.markdown("**Triedro de Frenet:**")
 
     df = pd.DataFrame(
         {
             "Vetor": ["T", "N", "B"],
-            "x": [fmt(T[0]), fmt(N[0]), fmt(B[0])],
-            "y": [fmt(T[1]), fmt(N[1]), fmt(B[1])],
-            "z": [fmt(T[2]), fmt(N[2]), fmt(B[2])],
+            "Coordenada x": [fmt(T[0]), fmt(N[0]), fmt(B[0])],
+            "Coordenada y": [fmt(T[1]), fmt(N[1]), fmt(B[1])],
+            "Coordenada z": [fmt(T[2]), fmt(N[2]), fmt(B[2])],
         }
     )
 
     st.dataframe(df, hide_index=True, use_container_width=True)
-
+    
 
 st.subheader("Fórmulas usadas")
 
