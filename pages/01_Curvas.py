@@ -57,29 +57,15 @@ def safe_unit(v):
     return v / n
 
 
-def curve(t, name, a=1.0, b=0.5):
-    if name == "Reta":
-        return np.column_stack((t, t, t))
+custom = {}
 
-    if name == "Circunferência":
-        return np.column_stack((a * np.cos(t), a * np.sin(t), 0 * t))
+if name == "Personalizada":
+    st.markdown("Digite as coordenadas usando a variável `t`.")
+    st.caption("Funções disponíveis: sin, cos, tan, exp, log, sqrt, pi.")
 
-    if name == "Hélice circular":
-        return np.column_stack((a * np.cos(t), a * np.sin(t), b * t))
-
-    if name == "Parábola espacial":
-        return np.column_stack((t, t**2, t**3))
-
-    if name == "Curva toroidal":
-        return np.column_stack(
-            (
-                (2 + np.cos(3 * t)) * np.cos(t),
-                (2 + np.cos(3 * t)) * np.sin(t),
-                np.sin(3 * t),
-            )
-        )
-
-    return np.column_stack((t, t, t))
+    custom["x"] = st.text_input("x(t)", "cos(t)")
+    custom["y"] = st.text_input("y(t)", "sin(t)")
+    custom["z"] = st.text_input("z(t)", "t")
 
 def curve_latex(name):
     if name == "Reta":
@@ -96,6 +82,9 @@ def curve_latex(name):
 
     if name == "Curva toroidal":
         return r"\alpha(t)=((2+\cos(3t))\cos t,\;(2+\cos(3t))\sin t,\;\sin(3t))"
+
+    if name == "Personalizada":
+        return r"\alpha(t)=\left(x(t),\,y(t),\,z(t)\right)"
 
     return r"\alpha(t)=(x(t),y(t),z(t))"
 
@@ -235,11 +224,22 @@ with st.sidebar:
             "Hélice circular",
             "Parábola espacial",
             "Curva toroidal",
+            "Personalizada"
         ],
     )
 
     a = st.slider("Parâmetro a", 0.2, 3.0, 1.0, 0.1)
     b = st.slider("Parâmetro b", -2.0, 2.0, 0.5, 0.1)
+
+    custom = {}
+
+if name == "Personalizada":
+    st.markdown("Digite as coordenadas usando a variável `t`.")
+    st.caption("Funções disponíveis: sin, cos, tan, exp, log, sqrt, pi.")
+
+    custom["x"] = st.text_input("x(t)", "cos(t)")
+    custom["y"] = st.text_input("y(t)", "sin(t)")
+    custom["z"] = st.text_input("z(t)", "t")
 
     st.header("Domínio")
 
@@ -268,7 +268,7 @@ if tmax <= tmin:
 t = np.linspace(tmin, tmax, n)
 dt = t[1] - t[0]
 
-alpha = curve(t, name, a, b)
+alpha = curve(t, name, a, b, custom)
 alpha1, alpha2, alpha3 = derivatives(alpha, dt)
 
 kappa = curvature(alpha1, alpha2)
