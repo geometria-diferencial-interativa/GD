@@ -96,25 +96,16 @@ with st.sidebar:
 
     st.subheader("Percurso de estudo")
 
-    st.markdown(
-        """
-        **1. Curvas**
+    st.page_link("app.py", label="🏠 Início")
+    st.page_link("pages/01_Curvas.py", label="1. Curvas em R³")
 
-        **2. Superfícies Regulares**
-
-        **3. Plano Tangente e Normal**
-
-        **4. Primeira Forma Fundamental**
-
-        **5. Segunda Forma Fundamental**
-
-        **6. Curvaturas**
-
-        **7. Superfícies Mínimas**
-
-        **8. Variação da Área**
-        """
-    )
+    st.markdown("2. Superfícies Regulares")
+    st.markdown("3. Plano Tangente e Normal")
+    st.markdown("4. Primeira Forma Fundamental")
+    st.markdown("5. Segunda Forma Fundamental")
+    st.markdown("6. Curvaturas")
+    st.markdown("7. Superfícies Mínimas")
+    st.markdown("8. Variação da Área")
 
     st.divider()
 
@@ -122,7 +113,6 @@ with st.sidebar:
         "Plataforma educacional para visualização "
         "e exploração de conceitos de Geometria Diferencial."
     )
-
 
 # ============================================================
 # CABEÇALHO
