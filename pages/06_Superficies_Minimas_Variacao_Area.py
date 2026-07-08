@@ -304,7 +304,7 @@ def make_plot(X, C, title, colorbar_title, point=None, N=None, show_normal=False
     return fig
 
 
-st.title("Módulo 6 — Superfícies Mínimas e Variação da Área")
+st.title("6 — Superfícies Mínimas e Variação da Área")
 
 st.write(
     "Este módulo conecta a condição geométrica \(H=0\) com a ideia variacional de área. "
