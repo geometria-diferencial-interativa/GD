@@ -233,15 +233,13 @@ def make_plot(
         )
 
     fig.add_trace(
-        go.Surface(
-            x=P[..., 0],
-            y=P[..., 1],
-            z=P[..., 2],
-            opacity=0.75,
-            colorscale=[[0, "rgba(255,180,0,0.75)"], [1, "rgba(255,180,0,0.75)"]],
-            showscale=False,
-            name="Plano tangente",
-            showlegend=True,
+        go.Scatter3d(
+            x=[p[0]],
+            y=[p[1]],
+            z=[p[2]],
+            mode="markers",
+            name="Ponto p=X(u₀,v₀)",
+            marker=dict(size=7),
         )
     )
 
@@ -269,7 +267,12 @@ def make_plot(
         )
 
     if show_plane:
-        P = tangent_plane(p, Xu[i0, j0], Xv[i0, j0], size=plane_size)
+        P = tangent_plane(
+            p,
+            Xu[i0, j0],
+            Xv[i0, j0],
+            size=plane_size,
+        )
 
         fig.add_trace(
             go.Surface(
@@ -286,7 +289,7 @@ def make_plot(
                 showlegend=True,
             )
         )
-    
+
     if show_vectors:
         add_arrow(fig, p, Xu[i0, j0], "Xᵤ(u₀,v₀)")
         add_arrow(fig, p, Xv[i0, j0], "Xᵥ(u₀,v₀)")
@@ -331,7 +334,6 @@ def make_plot(
     )
 
     return fig
-
 
 st.title("3 - Plano Tangente e Vetor Normal")
 
