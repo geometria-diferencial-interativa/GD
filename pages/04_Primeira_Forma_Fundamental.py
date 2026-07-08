@@ -212,10 +212,35 @@ def make_plot(X, i0, j0, Xu, Xv, W, show_vectors=True, show_coord=True):
             x=X[..., 0],
             y=X[..., 1],
             z=X[..., 2],
-            opacity=0.72,
+            opacity=0.65,
             colorscale="Viridis",
             showscale=False,
             name="Superfície",
+            showlegend=True,
+        )
+    )
+
+    # Região de área local em torno de X(u0,v0)
+    ni, nj = X.shape[0], X.shape[1]
+    i1 = max(i0 - 3, 0)
+    i2 = min(i0 + 4, ni)
+    j1 = max(j0 - 3, 0)
+    j2 = min(j0 + 4, nj)
+
+    patch = X[i1:i2, j1:j2, :]
+
+    fig.add_trace(
+        go.Surface(
+            x=patch[..., 0],
+            y=patch[..., 1],
+            z=patch[..., 2],
+            opacity=0.95,
+            colorscale=[
+                [0, "rgba(255,160,0,0.95)"],
+                [1, "rgba(255,160,0,0.95)"],
+            ],
+            showscale=False,
+            name="Elemento de área local",
             showlegend=True,
         )
     )
@@ -282,7 +307,6 @@ def make_plot(X, i0, j0, Xu, Xv, W, show_vectors=True, show_coord=True):
     )
 
     return fig
-
 
 # ============================================================
 # TÍTULO E INTRODUÇÃO
@@ -465,8 +489,10 @@ try:
             rf"\end{{pmatrix}}"
         )
 
-        st.markdown("**Densidade de área:**")
+        st.markdown("**Elemento de área local:**")
+        st.latex(r"dA=\sqrt{EG-F^2}\,du\,dv")
         st.latex(rf"\sqrt{{EG-F^2}}={fmt(area_density[i0,j0])}")
+        st.latex(rf"dA\approx {fmt(area_density[i0,j0] * du * dv)}")
 
         st.markdown("**Área aproximada no domínio:**")
         st.latex(rf"A\approx {fmt(total_area)}")
