@@ -104,7 +104,11 @@ with st.sidebar:
         label="3. Plano Tangente e Vetor Normal"
     )
 
-    st.markdown("4. Primeira Forma Fundamental")
+    st.page_link(
+        "pages/04_Primeira_Forma_Fundamental.py",
+        label="4. Primeira Forma Fundamental"
+    )
+    
     st.markdown("5. Segunda Forma Fundamental")
     st.markdown("6. Curvaturas")
     st.markdown("7. Superfícies Mínimas")
