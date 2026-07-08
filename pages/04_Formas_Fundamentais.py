@@ -454,7 +454,7 @@ def make_plot(
     return fig
 
 
-st.title("Módulo 4 — Formas Fundamentais")
+st.title("4 — Formas Fundamentais")
 
 st.write(
     "Nesta página estudamos, no mesmo ponto da superfície, a Primeira Forma Fundamental, "
