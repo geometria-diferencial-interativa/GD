@@ -200,7 +200,7 @@ def tangent_plane(p, Xu, Xv, size=1.2, m=25):
     )
 
     return plane
-
+    
 def make_plot(
     X,
     i0,
@@ -276,14 +276,17 @@ def make_plot(
                 x=P[..., 0],
                 y=P[..., 1],
                 z=P[..., 2],
-                opacity=0.45,
-                colorscale="Blues",
+                opacity=0.75,
+                colorscale=[
+                    [0, "rgba(255,180,0,0.75)"],
+                    [1, "rgba(255,180,0,0.75)"],
+                ],
                 showscale=False,
                 name="Plano tangente",
                 showlegend=True,
             )
         )
-
+    
     if show_vectors:
         add_arrow(fig, p, Xu[i0, j0], "Xᵤ(u₀,v₀)")
         add_arrow(fig, p, Xv[i0, j0], "Xᵥ(u₀,v₀)")
