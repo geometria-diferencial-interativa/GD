@@ -121,10 +121,9 @@ with st.sidebar:
         label="4. Formas Fundamentais"
     )
 
-    st.markdown("5. Segunda Forma Fundamental")
-    st.markdown("6. Curvaturas")
-    st.markdown("7. Superfícies Mínimas")
-    st.markdown("8. Variação da Área")
+    st.markdown("5. Curvaturas")
+    st.markdown("6. Superfícies Mínimas")
+    st.markdown("7. Variação da Área")
     
     st.divider()
 
@@ -370,11 +369,11 @@ with st.expander("3. Plano Tangente e Vetor Normal"):
 # MÓDULO 4
 # ============================================================
 
-with st.expander("4. Primeira Forma Fundamental"):
+with st.expander("4. Formas Fundamentais"):
 
     st.write(
         """
-        Estudo das propriedades métricas das superfícies.
+        Estudo das propriedades métricas das superfícies e introdução ao estudo da curvatura normal das superfícies.
         """
     )
 
@@ -385,27 +384,7 @@ with st.expander("4. Primeira Forma Fundamental"):
         - coeficientes E, F e G;
         - comprimento de curvas;
         - ângulo entre curvas;
-        - área de superfícies.
-        """
-    )
-
-
-# ============================================================
-# MÓDULO 5
-# ============================================================
-
-with st.expander("5. Segunda Forma Fundamental"):
-
-    st.write(
-        """
-        Introdução ao estudo da curvatura das superfícies.
-        """
-    )
-
-    st.markdown(
-        """
-        **Principais conceitos:**
-
+        - área de superfícies;
         - aplicação normal de Gauss;
         - operador de forma;
         - coeficientes e, f e g;
@@ -413,9 +392,9 @@ with st.expander("5. Segunda Forma Fundamental"):
         """
     )
 
-
+   
 # ============================================================
-# MÓDULO 6
+# MÓDULO 5
 # ============================================================
 
 with st.expander("6. Curvaturas"):
@@ -440,7 +419,7 @@ with st.expander("6. Curvaturas"):
 
 
 # ============================================================
-# MÓDULO 7
+# MÓDULO 6
 # ============================================================
 
 with st.expander("7. Superfícies Mínimas"):
@@ -468,7 +447,7 @@ with st.expander("7. Superfícies Mínimas"):
 
 
 # ============================================================
-# MÓDULO 8
+# MÓDULO 7
 # ============================================================
 
 with st.expander("8. Variação da Área"):
