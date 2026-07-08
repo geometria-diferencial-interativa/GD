@@ -185,7 +185,10 @@ def add_arrow(fig, p, v, label, scale=0.6):
     )
 
 
-def tangent_plane(p, Xu, Xv, size=0.8, m=15):
+def tangent_plane(p, Xu, Xv, size=1.2, m=25):
+    Xu = unit(Xu)
+    Xv = unit(Xv)
+
     s = np.linspace(-size, size, m)
     t = np.linspace(-size, size, m)
     S, T = np.meshgrid(s, t)
@@ -197,7 +200,6 @@ def tangent_plane(p, Xu, Xv, size=0.8, m=15):
     )
 
     return plane
-
 
 def make_plot(
     X,
@@ -231,13 +233,15 @@ def make_plot(
         )
 
     fig.add_trace(
-        go.Scatter3d(
-            x=[p[0]],
-            y=[p[1]],
-            z=[p[2]],
-            mode="markers",
-            name="Ponto p=X(u₀,v₀)",
-            marker=dict(size=7),
+        go.Surface(
+            x=P[..., 0],
+            y=P[..., 1],
+            z=P[..., 2],
+            opacity=0.75,
+            colorscale=[[0, "rgba(255,180,0,0.75)"], [1, "rgba(255,180,0,0.75)"]],
+            showscale=False,
+            name="Plano tangente",
+            showlegend=True,
         )
     )
 
@@ -405,8 +409,7 @@ with st.sidebar:
     show_plane = st.checkbox("Mostrar plano tangente", value=True)
     show_normal_line = st.checkbox("Mostrar reta normal", value=True)
 
-    plane_size = st.slider("Tamanho do plano tangente", 0.2, 2.0, 0.8, 0.1)
-
+    plane_size = st.slider("Tamanho do plano tangente", 0.3, 3.0, 1.4, 0.1)
 
 if umax <= umin or vmax <= vmin:
     st.error("O domínio precisa satisfazer u mínimo < u máximo e v mínimo < v máximo.")
