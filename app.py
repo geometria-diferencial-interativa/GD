@@ -117,8 +117,8 @@ with st.sidebar:
     )
 
     st.page_link(
-        "pages/04_Primeira_Forma_Fundamental.py",
-        label="4. Primeira Forma Fundamental"
+        "pages/04_Formas_Fundamentais.py",
+        label="4. Formas Fundamentais"
     )
 
     st.markdown("5. Segunda Forma Fundamental")
