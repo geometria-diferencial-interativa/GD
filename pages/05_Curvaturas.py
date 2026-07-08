@@ -492,7 +492,7 @@ def make_plot(
 # TÍTULO
 # ============================================================
 
-st.title("Módulo 5 — Curvaturas")
+st.title("5 — Curvaturas")
 
 st.write(
     "Neste módulo estudamos as principais medidas de curvatura de uma superfície: "
