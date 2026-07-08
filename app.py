@@ -121,7 +121,11 @@ with st.sidebar:
         label="4. Formas Fundamentais"
     )
 
-    st.markdown("5. Curvaturas")
+    st.page_link(
+        "pages/05_Curvaturas.py", 
+        label="5. Curvaturas"
+    )
+
     st.markdown("6. Superfícies Mínimas")
     st.markdown("7. Variação da Área")
     
