@@ -16,10 +16,9 @@ with st.sidebar:
     st.page_link("pages/03_Plano_Tangente_Normal.py", label="3. Plano Tangente e Vetor Normal")    
     st.page_link("pages/04_Formas_Fundamentais.py", label="4. Formas Fundamentais")
     st.page_link("pages/05_Curvaturas.py", label="5. Curvaturas")
-    st.markdown("6. Curvaturas")
-    st.markdown("7. Superfícies Mínimas")
-    st.markdown("8. Variação da Área")
-def fmt(x, digits=5):
+    st.page_link("pages/06_Superficies_Minimas_Variacao_Area.py",label="6. Superfícies Mínimas e Variação da Área",)
+    
+    def fmt(x, digits=5):
     try:
         x = float(x)
         if not np.isfinite(x):
