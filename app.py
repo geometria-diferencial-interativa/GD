@@ -126,8 +126,11 @@ with st.sidebar:
         label="5. Curvaturas"
     )
 
-    st.markdown("6. Superfícies Mínimas")
-    st.markdown("7. Variação da Área")
+    st.page_link(
+        "pages/06_Superficies_Minimas_Variacao_Area.py",
+        label="6. Superfícies Mínimas e Variação da Área"
+    )
+
     
     st.divider()
 
