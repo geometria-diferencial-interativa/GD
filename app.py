@@ -82,7 +82,19 @@ st.markdown(
 # ============================================================
 
 with st.sidebar:
+
     st.title("📐 Geometria Diferencial")
+
+    st.markdown(
+        """
+        Esta plataforma foi desenvolvida para o estudo
+        interativo de conceitos de Geometria Diferencial.
+        """
+    )
+
+    st.divider()
+
+    st.subheader("Percurso de estudo")
 
     st.page_link(
         "app.py",
@@ -108,12 +120,12 @@ with st.sidebar:
         "pages/04_Primeira_Forma_Fundamental.py",
         label="4. Primeira Forma Fundamental"
     )
-    
+
     st.markdown("5. Segunda Forma Fundamental")
     st.markdown("6. Curvaturas")
     st.markdown("7. Superfícies Mínimas")
     st.markdown("8. Variação da Área")
-
+    
     st.divider()
 
     st.caption(
