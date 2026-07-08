@@ -397,7 +397,7 @@ with st.expander("4. Formas Fundamentais"):
 # MÓDULO 5
 # ============================================================
 
-with st.expander("6. Curvaturas"):
+with st.expander("5. Curvaturas"):
 
     st.write(
         """
@@ -422,7 +422,7 @@ with st.expander("6. Curvaturas"):
 # MÓDULO 6
 # ============================================================
 
-with st.expander("7. Superfícies Mínimas"):
+with st.expander("6. Superfícies Mínimas"):
 
     st.write(
         """
@@ -450,7 +450,7 @@ with st.expander("7. Superfícies Mínimas"):
 # MÓDULO 7
 # ============================================================
 
-with st.expander("8. Variação da Área"):
+with st.expander("7. Variação da Área"):
 
     st.write(
         """
