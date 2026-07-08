@@ -15,7 +15,7 @@ with st.sidebar:
     st.page_link("pages/02_Superficies_Regulares.py", label="2. Superfícies Regulares")
     st.page_link("pages/03_Plano_Tangente_Normal.py", label="3. Plano Tangente e Vetor Normal")    
     st.page_link("pages/04_Formas_Fundamentais.py", label="4. Formas Fundamentais")
-    st.markdown("5. Segunda Forma Fundamental")
+    st.page_link("pages/05_Curvaturas.py", label="5. Curvaturas")
     st.markdown("6. Curvaturas")
     st.markdown("7. Superfícies Mínimas")
     st.markdown("8. Variação da Área")
