@@ -892,7 +892,7 @@ def render_planar_analysis() -> None:
         st.latex(r"s(t)=\int_{t_{\min}}^t\|\alpha'(u)\|\,du")
         st.latex(rf"L(\alpha)\approx {fmt(total_length)}")
         st.markdown(
-            "O comprimento acumulado é obtido integrando a rapidez ao longo do parâmetro. "
+            "O comprimento é obtido integrando a rapidez ao longo do parâmetro. "
             "Uma reparametrização altera a maneira como o traço é percorrido, mas não necessariamente altera o traço geométrico."
         )
 
