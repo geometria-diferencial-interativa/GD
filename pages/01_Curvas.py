@@ -111,7 +111,6 @@ def eval_expr(expr: str, variable_name: str, variable_values: np.ndarray) -> np.
         "exp": np.exp,
         "log": np.log,
         "sqrt": np.sqrt,
-        "abs": np.abs,
         "pi": np.pi,
         "e": np.e,
         "where": np.where,
@@ -968,10 +967,7 @@ def render_planar_reconstruction() -> None:
         r"Uma função curvatura $\kappa(s)$ determina uma curva plana parametrizada pelo comprimento de arco, depois de fixados o ponto e a direção tangente iniciais."
     )
 
-    st.latex(r"\theta'(s)=\kappa(s)")
-    st.latex(r"T(s)=(\cos\theta(s),\sin\theta(s))")
-    st.latex(r"\alpha'(s)=T(s)")
-
+    
     with st.sidebar:
         st.subheader("Curvatura prescrita")
         name = st.selectbox(
