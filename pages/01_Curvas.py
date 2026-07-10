@@ -1616,7 +1616,7 @@ with st.sidebar:
     )
     mode = st.radio(
         "Escolha o modo",
-        ["Analisar uma curva conhecida", "Reconstruir pelo Teorema Fundamental"],
+        ["Analisar uma curva conhecida", "Obter a curva através do Teorema Fundamental"],
         key="mode",
     )
 
