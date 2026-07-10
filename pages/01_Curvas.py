@@ -5,28 +5,67 @@ import plotly.graph_objects as go
 from fractions import Fraction
 
 
-st.set_page_config(page_title="Curvas em R³", page_icon="📈", layout="wide")
+st.set_page_config(
+    page_title="Curvas em R³",
+    page_icon="📈",
+    layout="wide",
+)
 
+
+# ============================================================
+# MENU LATERAL
+# ============================================================
 
 with st.sidebar:
     st.title("📐 Geometria Diferencial")
-    st.page_link("app.py", label="🏠 Início")
-    st.page_link("pages/01_Curvas.py", label="1. Curvas em R³")
-    st.page_link("pages/02_Superficies_Regulares.py", label="2. Superfícies Regulares")
-    st.page_link("pages/03_Plano_Tangente_Normal.py", label="3. Plano Tangente e Vetor Normal")    
-    st.page_link("pages/04_Formas_Fundamentais.py", label="4. Formas Fundamentais")
-    st.page_link("pages/05_Curvaturas.py", label="5. Curvaturas")
-    st.page_link("pages/06_Superficies_Minimas_Variacao_Area.py",label="6. Superfícies Mínimas e Variação da Área",)
-    
-    def fmt(x, digits=5):
+
+    st.page_link(
+        "app.py",
+        label="🏠 Início",
+    )
+
+    st.page_link(
+        "pages/01_Curvas.py",
+        label="1. Curvas em R³",
+    )
+
+    st.page_link(
+        "pages/02_Superficies_Regulares.py",
+        label="2. Superfícies Regulares",
+    )
+
+    st.page_link(
+        "pages/03_Plano_Tangente_Normal.py",
+        label="3. Plano Tangente e Vetor Normal",
+    )
+
+    st.page_link(
+        "pages/04_Formas_Fundamentais.py",
+        label="4. Formas Fundamentais",
+    )
+
+    st.page_link(
+        "pages/05_Curvaturas.py",
+        label="5. Curvaturas",
+    )
+
+    st.page_link(
+        "pages/06_Superficies_Minimas_Variacao_Area.py",
+        label="6. Superfícies Mínimas e Variação da Área",
+    )
+
+
+def fmt(x, digits=5):
     try:
         x = float(x)
+
         if not np.isfinite(x):
             return "não definido"
+
         return f"{x:.{digits}f}"
+
     except Exception:
         return "não definido"
-
 
 def frac(x, max_denominator=1000):
     try:
