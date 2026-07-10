@@ -1471,13 +1471,10 @@ def render_spatial_reconstruction() -> None:
     c1, c2, c3 = st.columns(3)
     with c1:
         st.metric("‖T‖", fmt(np.linalg.norm(T[i0]), 8))
-        st.metric("⟨T,N⟩", fmt(np.dot(T[i0], N[i0]), 8))
     with c2:
         st.metric("‖N‖", fmt(np.linalg.norm(N[i0]), 8))
-        st.metric("⟨T,B⟩", fmt(np.dot(T[i0], B[i0]), 8))
     with c3:
         st.metric("‖B‖", fmt(np.linalg.norm(B[i0]), 8))
-        st.metric("⟨N,B⟩", fmt(np.dot(N[i0], B[i0]), 8))
 
     st.markdown("### Dados no ponto móvel")
     st.latex(rf"s_0={fmt(s[i0])}")
