@@ -20,6 +20,29 @@ st.set_page_config(
 EPS = 1e-10
 
 
+def cumulative_trapezoid_local(y: np.ndarray, x: np.ndarray) -> np.ndarray:
+    """Integração cumulativa pelo método dos trapézios, sem SciPy."""
+    y = np.asarray(y, dtype=float)
+    x = np.asarray(x, dtype=float)
+    if y.shape[0] != x.shape[0]:
+        raise ValueError("x e y devem ter o mesmo número de pontos.")
+    if len(x) < 2:
+        return np.array([], dtype=float)
+    dx = np.diff(x)
+    return np.cumsum(0.5 * (y[:-1] + y[1:]) * dx)
+
+
+def latex_scalar(x: float, digits: int = 5) -> str:
+    """Formata escalares para uso dentro de st.latex."""
+    try:
+        value = float(x)
+        if not np.isfinite(value):
+            return r"\text{não definido}"
+        return f"{value:.{digits}f}"
+    except Exception:
+        return r"\text{não definido}"
+
+
 # ============================================================
 # MENU LATERAL DA PLATAFORMA
 # ============================================================
@@ -144,7 +167,7 @@ def spatial_torsion(alpha1: np.ndarray, alpha2: np.ndarray, alpha3: np.ndarray) 
 
 def cumulative_arc_length(alpha1: np.ndarray, parameter: np.ndarray) -> np.ndarray:
     speed = np.linalg.norm(alpha1, axis=1)
-    return np.concatenate(([0.0], cumulative_trapezoid(speed, parameter)))
+    return np.concatenate(([0.0], cumulative_trapezoid_local(speed, parameter)))
 
 
 def nearest_index(grid: np.ndarray, value: float) -> int:
@@ -845,7 +868,7 @@ def render_planar_analysis() -> None:
         else:
             st.latex(rf"T(t_0)={vector_latex(T)}")
             st.latex(rf"N(t_0)={vector_latex(N)}")
-            st.latex(rf"\kappa(t_0)={fmt(kappa)}")
+            st.latex(rf"\kappa(t_0)={latex_scalar(kappa)}")
 
             if radius is None or center is None:
                 st.info(r"O raio e o centro de curvatura não estão definidos quando $\kappa(t_0)=0$.")
@@ -899,16 +922,44 @@ def planar_kappa_function(s: np.ndarray, name: str, params: Dict[str, float], cu
     raise ValueError("Função curvatura desconhecida.")
 
 
+def planar_kappa_latex(name: str, params: Dict[str, float], custom_expr: str) -> str:
+    if name == "Curvatura nula":
+        return r"\kappa(s)=0"
+    if name == "Curvatura constante":
+        return rf"\kappa(s)={params['c']:.3g}"
+    if name == "Curvatura linear":
+        return rf"\kappa(s)={params['a']:.3g}s"
+    if name == "Curvatura senoidal":
+        return rf"\kappa(s)={params['a']:.3g}\sin({params['b']:.3g}s)"
+    if name == "Curvatura racional":
+        return rf"\kappa(s)=\frac{{{params['a']:.3g}}}{{1+s^2}}"
+    return rf"\kappa(s)={custom_expr}"
+
+
+def invariant_latex(name: str, params: Dict[str, float], custom_expr: str, symbol: str) -> str:
+    if name == "Nula":
+        return rf"{symbol}(s)=0"
+    if name == "Constante":
+        return rf"{symbol}(s)={params['c']:.3g}"
+    if name == "Linear":
+        return rf"{symbol}(s)={params['a']:.3g}+{params['b']:.3g}s"
+    if name == "Senoidal":
+        return rf"{symbol}(s)={params['a']:.3g}+{params['b']:.3g}\sin({params['c']:.3g}s)"
+    if name == "Racional":
+        return rf"{symbol}(s)=\frac{{{params['a']:.3g}}}{{1+{params['b']:.3g}s^2}}"
+    return rf"{symbol}(s)={custom_expr}"
+
+
 def reconstruct_planar_curve(
     s: np.ndarray,
     kappa: np.ndarray,
     p0: np.ndarray,
     theta0: float,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    theta = theta0 + np.concatenate(([0.0], cumulative_trapezoid(kappa, s)))
+    theta = theta0 + np.concatenate(([0.0], cumulative_trapezoid_local(kappa, s)))
     T = np.column_stack((np.cos(theta), np.sin(theta)))
-    x = p0[0] + np.concatenate(([0.0], cumulative_trapezoid(T[:, 0], s)))
-    y = p0[1] + np.concatenate(([0.0], cumulative_trapezoid(T[:, 1], s)))
+    x = p0[0] + np.concatenate(([0.0], cumulative_trapezoid_local(T[:, 0], s)))
+    y = p0[1] + np.concatenate(([0.0], cumulative_trapezoid_local(T[:, 1], s)))
     alpha = np.column_stack((x, y))
     N = np.column_stack((-T[:, 1], T[:, 0]))
     return alpha, theta, T, N
@@ -985,11 +1036,18 @@ def render_planar_reconstruction() -> None:
     alpha, theta, T, N = reconstruct_planar_curve(s, kappa, p0, math.radians(theta0_deg))
     i0 = nearest_index(s, smove)
 
-    col1, col2 = st.columns(2)
-    with col1:
-        st.plotly_chart(make_scalar_plot(s, kappa, "s", "κ(s)", "Curvatura prescrita"), use_container_width=True)
-    with col2:
-        st.plotly_chart(make_scalar_plot(s, theta, "s", "θ(s)", "Ângulo da direção tangente"), use_container_width=True)
+    st.subheader("Função escolhida e reconstrução")
+    c1, c2 = st.columns(2)
+    with c1:
+        st.markdown("**Curvatura prescrita**")
+        st.latex(planar_kappa_latex(name, params, custom_expr))
+        st.latex(r"\theta(s)=\theta_0+\int_{s_{\min}}^s\kappa(u)\,du")
+    with c2:
+        st.markdown("**Dados iniciais**")
+        st.latex(rf"\alpha(s_{{\min}})=({x0:.3g},{y0:.3g})")
+        st.latex(rf"\theta_0={theta0_deg}^\circ")
+        st.latex(r"T(s)=(\cos\theta(s),\sin\theta(s))")
+    st.caption("A curva abaixo é obtida integrando α′(s)=T(s).")
 
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=alpha[:, 0], y=alpha[:, 1], mode="lines", name="Curva reconstruída", line=dict(width=5)))
@@ -1179,8 +1237,8 @@ def render_spatial_analysis() -> None:
             else:
                 st.latex(rf"N(t_0)={vector_latex(N)}")
                 st.latex(rf"B(t_0)={vector_latex(B)}")
-            st.latex(rf"\kappa(t_0)={fmt(kappa)}")
-            st.latex(rf"\tau(t_0)={fmt(tau)}")
+            st.latex(rf"\kappa(t_0)={latex_scalar(kappa)}")
+            st.latex(rf"\tau(t_0)={latex_scalar(tau)}")
 
     with st.expander("Fórmulas do triedro de Frenet", expanded=True):
         st.latex(r"T=\frac{\alpha'}{\|\alpha'\|}")
@@ -1193,12 +1251,6 @@ def render_spatial_analysis() -> None:
         st.warning(
             r"Em geral, o vetor normal principal não é obtido apenas normalizando $\alpha''$. Isso só funciona em situações especiais, como parametrizações pelo comprimento de arco."
         )
-
-    col1, col2 = st.columns(2)
-    with col1:
-        st.plotly_chart(make_scalar_plot(t, kappa_values, "t", "κ(t)", "Curvatura"), use_container_width=True)
-    with col2:
-        st.plotly_chart(make_scalar_plot(t, tau_values, "t", "τ(t)", "Torção"), use_container_width=True)
 
 
 # ============================================================
@@ -1252,50 +1304,38 @@ def solve_frenet_system(
     N0: np.ndarray,
     B0: np.ndarray,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    def kappa_interp(x: float) -> float:
-        return float(np.interp(x, s, kappa))
+    """Resolve o sistema de Frenet–Serret por Runge–Kutta de ordem 4."""
+    y = np.zeros((len(s), 12), dtype=float)
+    y[0] = np.concatenate((p0, T0, N0, B0))
 
-    def tau_interp(x: float) -> float:
-        return float(np.interp(x, s, tau))
+    def rhs(x: float, state: np.ndarray) -> np.ndarray:
+        Tvec = state[3:6]
+        Nvec = state[6:9]
+        Bvec = state[9:12]
+        kap = float(np.interp(x, s, kappa))
+        tor = float(np.interp(x, s, tau))
+        return np.concatenate((
+            Tvec,
+            kap * Nvec,
+            -kap * Tvec + tor * Bvec,
+            -tor * Nvec,
+        ))
 
-    def rhs(x: float, y: np.ndarray) -> np.ndarray:
-        T = y[3:6]
-        N = y[6:9]
-        B = y[9:12]
-        kap = kappa_interp(x)
-        tor = tau_interp(x)
-        d_alpha = T
-        dT = kap * N
-        dN = -kap * T + tor * B
-        dB = -tor * N
-        return np.concatenate((d_alpha, dT, dN, dB))
+    for i in range(len(s) - 1):
+        h = float(s[i + 1] - s[i])
+        yi = y[i]
+        k1 = rhs(s[i], yi)
+        k2 = rhs(s[i] + h / 2, yi + h * k1 / 2)
+        k3 = rhs(s[i] + h / 2, yi + h * k2 / 2)
+        k4 = rhs(s[i] + h, yi + h * k3)
+        y[i + 1] = yi + h * (k1 + 2 * k2 + 2 * k3 + k4) / 6
 
-    y0 = np.concatenate((p0, T0, N0, B0))
-    solution = solve_ivp(
-        rhs,
-        (float(s[0]), float(s[-1])),
-        y0,
-        t_eval=s,
-        rtol=1e-8,
-        atol=1e-10,
-        max_step=max((s[-1] - s[0]) / 300.0, 1e-3),
-    )
-    if not solution.success:
-        raise RuntimeError(solution.message)
+        Ti, Ni, Bi = orthonormal_frame(y[i + 1, 3:6], y[i + 1, 6:9])
+        y[i + 1, 3:6] = Ti
+        y[i + 1, 6:9] = Ni
+        y[i + 1, 9:12] = Bi
 
-    values = solution.y.T
-    alpha = values[:, 0:3]
-    T_raw = values[:, 3:6]
-    N_raw = values[:, 6:9]
-
-    T = np.zeros_like(T_raw)
-    N = np.zeros_like(N_raw)
-    B = np.zeros_like(T_raw)
-    for i in range(len(s)):
-        Ti, Ni, Bi = orthonormal_frame(T_raw[i], N_raw[i])
-        T[i], N[i], B[i] = Ti, Ni, Bi
-
-    return alpha, T, N, B
+    return y[:, 0:3], y[:, 3:6], y[:, 6:9], y[:, 9:12]
 
 
 def render_spatial_reconstruction() -> None:
@@ -1423,11 +1463,16 @@ def render_spatial_reconstruction() -> None:
 
     i0 = nearest_index(s, smove)
 
-    col1, col2 = st.columns(2)
-    with col1:
-        st.plotly_chart(make_scalar_plot(s, kappa, "s", "κ(s)", "Curvatura prescrita"), use_container_width=True)
-    with col2:
-        st.plotly_chart(make_scalar_plot(s, tau, "s", "τ(s)", "Torção prescrita"), use_container_width=True)
+    st.subheader("Funções escolhidas")
+    c1, c2 = st.columns(2)
+    with c1:
+        st.markdown("**Curvatura prescrita**")
+        st.latex(invariant_latex(k_name, k_params, k_custom, r"\kappa"))
+    with c2:
+        st.markdown("**Torção prescrita**")
+        st.latex(invariant_latex(t_name, t_params, t_custom, r"\tau"))
+    st.markdown("A curva abaixo é a solução numérica do sistema de Frenet–Serret para essas funções e para os dados iniciais escolhidos.")
+    st.latex(r"\begin{cases}\alpha'=T,\\ T'=\kappa N,\\ N'=-\kappa T+\tau B,\\ B'=-\tau N.\end{cases}")
 
     fig = make_spatial_plot(alpha, alpha[i0], T[i0], N[i0], B[i0], vector_scale, True, False)
     st.plotly_chart(fig, use_container_width=True)
@@ -1479,7 +1524,7 @@ with st.sidebar:
     )
     mode = st.radio(
         "Escolha o modo",
-        ["Analisar uma curva conhecida", "Obter a curva através do Teorema Fundamental"],
+        ["Analisar uma curva conhecida", "Reconstruir pelo Teorema Fundamental"],
         key="mode",
     )
 
