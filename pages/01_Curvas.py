@@ -1465,8 +1465,6 @@ def render_spatial_reconstruction() -> None:
         st.markdown("**Torção prescrita**")
         st.latex(invariant_latex(t_name, t_params, t_custom, r"\tau"))
     st.markdown("A curva abaixo é a solução numérica do sistema de Frenet–Serret para essas funções e para os dados iniciais escolhidos.")
-    st.latex(r"\begin{cases}\alpha'=T,\\ T'=\kappa N,\\ N'=-\kappa T+\tau B,\\ B'=-\tau N.\end{cases}")
-
     fig = make_spatial_plot(alpha, alpha[i0], T[i0], N[i0], B[i0], vector_scale, True, False)
     st.plotly_chart(fig, use_container_width=True)
 
