@@ -1524,23 +1524,6 @@ def render_spatial_reconstruction() -> None:
             rf"B'(s_0)=-{fmt(tau0)}{vector_latex(N[i0])}={vector_latex(B_prime0)}"
         )
 
-        st.markdown("**5. Integração numérica do sistema**")
-        st.markdown(
-            "O intervalo é dividido em pequenos passos e o sistema é integrado pelo método "
-            "de Runge–Kutta de quarta ordem. Em cada passo, o estado é"
-        )
-        st.latex(r"Y=(\alpha,T,N,B)\in\mathbb{R}^{12}")
-        st.latex(r"Y'=F(s,Y)")
-        st.latex(rf"h\approx {fmt(step_size,8)}")
-        st.latex(r"k_1=F(s_i,Y_i)")
-        st.latex(r"k_2=F\left(s_i+\frac h2,Y_i+\frac h2k_1\right)")
-        st.latex(r"k_3=F\left(s_i+\frac h2,Y_i+\frac h2k_2\right)")
-        st.latex(r"k_4=F(s_i+h,Y_i+hk_3)")
-        st.latex(r"Y_{i+1}=Y_i+\frac h6(k_1+2k_2+2k_3+k_4)")
-        st.info(
-            "Após cada passo, os vetores T, N e B são ortonormalizados numericamente "
-            "para controlar os pequenos erros de arredondamento."
-        )
 
     st.success(
         "Para os dados iniciais escolhidos, a solução numérica representa a curva determinada por κ e τ. Outros dados iniciais produzem uma curva congruente por uma isometria do espaço."
