@@ -5,7 +5,6 @@ from typing import Callable, Dict, Optional, Tuple
 import numpy as np
 import plotly.graph_objects as go
 import streamlit as st
-from scipy.integrate import cumulative_trapezoid, solve_ivp
 
 
 # ============================================================
