@@ -6,6 +6,7 @@ import numpy as np
 import plotly.graph_objects as go
 import streamlit as st
 
+
 # ============================================================
 # CONFIGURAÇÃO GERAL
 # ============================================================
@@ -17,6 +18,49 @@ st.set_page_config(
 )
 
 EPS = 1e-10
+
+
+def cumulative_trapezoid_local(y: np.ndarray, x: np.ndarray) -> np.ndarray:
+    """Integral acumulada pelo método dos trapézios, sem depender do SciPy."""
+    y = np.asarray(y, dtype=float)
+    x = np.asarray(x, dtype=float)
+    if y.shape[0] != x.shape[0]:
+        raise ValueError("x e y precisam ter o mesmo número de pontos.")
+    if len(x) < 2:
+        return np.array([], dtype=float)
+    dx = np.diff(x)
+    if y.ndim == 1:
+        areas = 0.5 * (y[:-1] + y[1:]) * dx
+    else:
+        areas = 0.5 * (y[:-1] + y[1:]) * dx[:, None]
+    return np.cumsum(areas, axis=0)
+
+
+def cumulative_trapezoid(y: np.ndarray, x: np.ndarray) -> np.ndarray:
+    """Compatibilidade interna: substitui scipy.integrate.cumulative_trapezoid."""
+    return cumulative_trapezoid_local(y, x)
+
+
+def rk4_on_grid(rhs: Callable[[float, np.ndarray], np.ndarray], grid: np.ndarray, y0: np.ndarray) -> np.ndarray:
+    """Resolve y'=f(t,y) em uma malha dada usando Runge–Kutta clássico de ordem 4."""
+    grid = np.asarray(grid, dtype=float)
+    y0 = np.asarray(y0, dtype=float)
+    if grid.ndim != 1 or len(grid) < 2:
+        raise ValueError("A malha deve conter pelo menos dois pontos.")
+    if np.any(np.diff(grid) <= 0):
+        raise ValueError("A malha de integração deve ser estritamente crescente.")
+    values = np.empty((len(grid), len(y0)), dtype=float)
+    values[0] = y0
+    for i in range(len(grid) - 1):
+        x = float(grid[i])
+        h = float(grid[i + 1] - grid[i])
+        y = values[i]
+        k1 = rhs(x, y)
+        k2 = rhs(x + h / 2.0, y + h * k1 / 2.0)
+        k3 = rhs(x + h / 2.0, y + h * k2 / 2.0)
+        k4 = rhs(x + h, y + h * k3)
+        values[i + 1] = y + h * (k1 + 2*k2 + 2*k3 + k4) / 6.0
+    return values
 
 
 # ============================================================
@@ -143,7 +187,7 @@ def spatial_torsion(alpha1: np.ndarray, alpha2: np.ndarray, alpha3: np.ndarray) 
 
 def cumulative_arc_length(alpha1: np.ndarray, parameter: np.ndarray) -> np.ndarray:
     speed = np.linalg.norm(alpha1, axis=1)
-    return np.concatenate(([0.0], cumulative_trapezoid(speed, parameter)))
+    return np.concatenate(([0.0], cumulative_trapezoid_local(speed, parameter)))
 
 
 def nearest_index(grid: np.ndarray, value: float) -> int:
@@ -904,10 +948,10 @@ def reconstruct_planar_curve(
     p0: np.ndarray,
     theta0: float,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    theta = theta0 + np.concatenate(([0.0], cumulative_trapezoid(kappa, s)))
+    theta = theta0 + np.concatenate(([0.0], cumulative_trapezoid_local(kappa, s)))
     T = np.column_stack((np.cos(theta), np.sin(theta)))
-    x = p0[0] + np.concatenate(([0.0], cumulative_trapezoid(T[:, 0], s)))
-    y = p0[1] + np.concatenate(([0.0], cumulative_trapezoid(T[:, 1], s)))
+    x = p0[0] + np.concatenate(([0.0], cumulative_trapezoid_local(T[:, 0], s)))
+    y = p0[1] + np.concatenate(([0.0], cumulative_trapezoid_local(T[:, 1], s)))
     alpha = np.column_stack((x, y))
     N = np.column_stack((-T[:, 1], T[:, 0]))
     return alpha, theta, T, N
@@ -916,12 +960,46 @@ def reconstruct_planar_curve(
 def render_planar_reconstruction() -> None:
     st.header("Teorema Fundamental das Curvas Planas")
     st.markdown(
-        r"Uma função curvatura $\kappa(s)$ determina uma curva plana parametrizada pelo comprimento de arco, depois de fixados o ponto e a direção tangente iniciais."
+        r"""
+O estudante escolhe a função curvatura $\kappa(s)$. Pelo Teorema Fundamental das
+Curvas Planas, depois de fixarmos um ponto inicial $p_0$ e uma direção tangente inicial,
+existe uma única curva parametrizada pelo comprimento de arco que possui essa curvatura,
+a menos de movimentos rígidos do plano.
+"""
     )
 
-    st.latex(r"\theta'(s)=\kappa(s)")
-    st.latex(r"T(s)=(\cos\theta(s),\sin\theta(s))")
-    st.latex(r"\alpha'(s)=T(s)")
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        st.latex(r"\theta'(s)=\kappa(s)")
+    with c2:
+        st.latex(r"T(s)=(\cos\theta(s),\sin\theta(s))")
+    with c3:
+        st.latex(r"\alpha'(s)=T(s)")
+
+    with st.expander("Como a reconstrução é realizada", expanded=False):
+        st.markdown(
+            r"""
+Primeiro integramos a curvatura para encontrar o ângulo da direção tangente:
+
+$$
+\theta(s)=\theta_0+\int_{s_0}^{s}\kappa(u)\,du.
+$$
+
+Em seguida, construímos o vetor tangente unitário
+
+$$
+T(s)=(\cos\theta(s),\sin\theta(s)).
+$$
+
+Por fim, integramos $\alpha'(s)=T(s)$:
+
+$$
+\alpha(s)=p_0+\int_{s_0}^{s}T(u)\,du.
+$$
+
+Como $\|T(s)\|=1$, o parâmetro $s$ é o comprimento de arco.
+"""
+        )
 
     with st.sidebar:
         st.subheader("Curvatura prescrita")
@@ -946,6 +1024,7 @@ def render_planar_reconstruction() -> None:
             if name == "Curvatura senoidal":
                 params["b"] = st.slider("Parâmetro b", 0.1, 5.0, 1.0, 0.1, key="tfp_b")
         elif name == "Personalizada":
+            st.caption("Use s, sin, cos, exp, sqrt, pi, entre outras funções disponíveis.")
             custom_expr = st.text_input("κ(s)", custom_expr, key="tfp_custom")
 
         st.subheader("Intervalo e dados iniciais")
@@ -961,6 +1040,11 @@ def render_planar_reconstruction() -> None:
         else:
             smove = float(smin)
 
+        st.subheader("Objetos geométricos")
+        vector_scale = st.slider("Escala dos vetores", 0.1, 3.0, 1.0, 0.1, key="tfp_scale")
+        show_tangent = st.checkbox("Vetor e reta tangente", True, key="tfp_show_tangent")
+        show_normal = st.checkbox("Vetor e reta normal", True, key="tfp_show_normal")
+        show_circle = st.checkbox("Círculo osculador", True, key="tfp_show_circle")
         compare_rigid = st.checkbox("Comparar outra condição inicial", value=False, key="tfp_compare")
         if compare_rigid:
             x1 = st.number_input("Novo x₀", value=2.0, key="tfp_x1")
@@ -974,27 +1058,54 @@ def render_planar_reconstruction() -> None:
     s = np.linspace(smin, smax, resolution)
     try:
         kappa = planar_kappa_function(s, name, params, custom_expr)
+        if kappa.shape != s.shape:
+            kappa = np.broadcast_to(kappa, s.shape).astype(float)
         if not np.all(np.isfinite(kappa)):
             raise ValueError("A função curvatura produziu valores não finitos.")
+        alpha, theta, T, N = reconstruct_planar_curve(
+            s,
+            kappa,
+            np.array([x0, y0], dtype=float),
+            math.radians(theta0_deg),
+        )
     except Exception as exc:
-        st.error(rf"Não foi possível avaliar $\kappa(s)$: {exc}")
+        st.error(rf"Não foi possível reconstruir a curva: {exc}")
         return
 
-    p0 = np.array([x0, y0], dtype=float)
-    alpha, theta, T, N = reconstruct_planar_curve(s, kappa, p0, math.radians(theta0_deg))
     i0 = nearest_index(s, smove)
+    p = alpha[i0]
+    kap0 = float(kappa[i0])
+    center = None
+    radius = None
+    if abs(kap0) > 1e-8:
+        radius = 1.0 / abs(kap0)
+        center = p + (1.0 / kap0) * N[i0]
 
-    col1, col2 = st.columns(2)
-    with col1:
-        st.plotly_chart(make_scalar_plot(s, kappa, "s", "κ(s)", "Curvatura prescrita"), use_container_width=True)
-    with col2:
-        st.plotly_chart(make_scalar_plot(s, theta, "s", "θ(s)", "Ângulo da direção tangente"), use_container_width=True)
+    top1, top2 = st.columns(2)
+    with top1:
+        st.plotly_chart(make_scalar_plot(s, kappa, "s", "κ(s)", "Curvatura escolhida"), use_container_width=True)
+    with top2:
+        st.plotly_chart(make_scalar_plot(s, theta, "s", "θ(s)", "Direção tangente reconstruída"), use_container_width=True)
 
-    fig = go.Figure()
-    fig.add_trace(go.Scatter(x=alpha[:, 0], y=alpha[:, 1], mode="lines", name="Curva reconstruída", line=dict(width=5)))
-    fig.add_trace(go.Scatter(x=[alpha[i0, 0]], y=[alpha[i0, 1]], mode="markers", name="Ponto móvel", marker=dict(size=10)))
-    add_2d_vector(fig, alpha[i0], T[i0], "T(s₀)", 1.0)
-    add_2d_vector(fig, alpha[i0], N[i0], "N(s₀)", 1.0)
+    fig = make_planar_plot(
+        alpha=alpha,
+        p=p,
+        velocity=T[i0],
+        T=T[i0],
+        N=N[i0],
+        vector_scale=vector_scale,
+        show_velocity=False,
+        show_tangent_vector=show_tangent,
+        show_normal_vector=show_normal,
+        show_tangent_line=show_tangent,
+        show_normal_line=show_normal,
+        show_circle=show_circle,
+        center=center,
+        radius=radius,
+        equal_axes=True,
+    )
+    fig.data[0].name = "Curva reconstruída"
+    fig.data[1].name = "Ponto α(s₀)"
 
     if compare_rigid:
         alpha2, _, _, _ = reconstruct_planar_curve(
@@ -1003,28 +1114,36 @@ def render_planar_reconstruction() -> None:
             np.array([x1, y1], dtype=float),
             math.radians(theta1_deg),
         )
-        fig.add_trace(
-            go.Scatter(
-                x=alpha2[:, 0],
-                y=alpha2[:, 1],
-                mode="lines",
-                name="Mesma κ, novos dados iniciais",
-                line=dict(width=4, dash="dash"),
-            )
-        )
+        fig.add_trace(go.Scatter(
+            x=alpha2[:, 0], y=alpha2[:, 1], mode="lines",
+            name="Mesma κ, outros dados iniciais", line=dict(width=4, dash="dash")
+        ))
 
-    fig.update_layout(
-        height=650,
-        xaxis_title="x",
-        yaxis_title="y",
-        margin=dict(l=0, r=0, t=35, b=0),
-        legend=dict(x=0.02, y=0.02, xanchor="left", yanchor="bottom", bgcolor="rgba(255,255,255,0.78)"),
-    )
-    fig.update_yaxes(scaleanchor="x", scaleratio=1)
     st.plotly_chart(fig, use_container_width=True)
 
+    st.markdown("### Objetos no ponto selecionado")
+    m1, m2, m3, m4 = st.columns(4)
+    m1.metric("s₀", fmt(s[i0]))
+    m2.metric("κ(s₀)", fmt(kap0))
+    m3.metric("Raio de curvatura", fmt(radius) if radius is not None else "não definido")
+    m4.metric("‖T(s₀)‖", fmt(np.linalg.norm(T[i0]), 8))
+
+    d1, d2 = st.columns(2)
+    with d1:
+        st.latex(rf"\alpha(s_0)={vector_latex(p)}")
+        st.latex(rf"T(s_0)={vector_latex(T[i0])}")
+        st.latex(rf"N(s_0)={vector_latex(N[i0])}")
+    with d2:
+        st.latex(rf"\kappa(s_0)={fmt(kap0)}")
+        if center is not None and radius is not None:
+            st.latex(rf"\rho(s_0)=\frac{{1}}{{|\kappa(s_0)|}}={fmt(radius)}")
+            st.latex(rf"C(s_0)=\alpha(s_0)+\frac{{1}}{{\kappa(s_0)}}N(s_0)={vector_latex(center)}")
+        else:
+            st.info("Como κ(s₀)=0, o círculo osculador não possui raio finito nesse ponto.")
+
     st.success(
-        "Alterar o ponto inicial e a direção inicial produz uma curva congruente à primeira: a curvatura determina a curva a menos de movimento rígido."
+        "A curva exibida foi obtida numericamente a partir da curvatura escolhida. "
+        "Alterar o ponto ou a direção inicial apenas desloca ou gira a curva, sem alterar sua curvatura."
     )
 
 
@@ -1270,19 +1389,7 @@ def solve_frenet_system(
         return np.concatenate((d_alpha, dT, dN, dB))
 
     y0 = np.concatenate((p0, T0, N0, B0))
-    solution = solve_ivp(
-        rhs,
-        (float(s[0]), float(s[-1])),
-        y0,
-        t_eval=s,
-        rtol=1e-8,
-        atol=1e-10,
-        max_step=max((s[-1] - s[0]) / 300.0, 1e-3),
-    )
-    if not solution.success:
-        raise RuntimeError(solution.message)
-
-    values = solution.y.T
+    values = rk4_on_grid(rhs, s, y0)
     alpha = values[:, 0:3]
     T_raw = values[:, 3:6]
     N_raw = values[:, 6:9]
@@ -1300,21 +1407,29 @@ def solve_frenet_system(
 def render_spatial_reconstruction() -> None:
     st.header("Teorema Fundamental das Curvas no Espaço")
     st.markdown(
-        r"Dadas funções $\kappa(s)>0$ e $\tau(s)$, o sistema de Frenet–Serret reconstrói uma curva espacial parametrizada pelo comprimento de arco."
+        r"""
+O estudante escolhe a curvatura $\kappa(s)>0$ e a torção $\tau(s)$. Pelo Teorema
+Fundamental das Curvas no Espaço, depois de fixados o ponto e o triedro inicial, existe
+uma única curva parametrizada pelo comprimento de arco que possui esses invariantes,
+a menos de uma isometria de $\mathbb{R}^3$.
+"""
     )
 
-    st.latex(r"\alpha'=T")
-    st.latex(r"T'=\kappa N")
-    st.latex(r"N'=-\kappa T+\tau B")
-    st.latex(r"B'=-\tau N")
+    st.latex(r"\alpha'=T,\qquad T'=\kappa N,\qquad N'=-\kappa T+\tau B,\qquad B'=-\tau N")
+
+    with st.expander("Como a curva espacial é encontrada", expanded=False):
+        st.markdown(
+            r"""
+O site resolve numericamente o sistema de Frenet–Serret. A curvatura mede quanto a
+curva se afasta de sua reta tangente, enquanto a torção mede quanto ela se afasta do
+plano osculador. Se $\tau\equiv0$, a curva reconstruída é plana; se $\kappa$ e $\tau$
+são constantes positivas, obtemos uma hélice circular, a menos de movimento rígido.
+"""
+        )
 
     with st.sidebar:
         st.subheader("Curvatura κ(s)")
-        k_name = st.selectbox(
-            "Tipo de κ",
-            ["Constante", "Linear", "Senoidal", "Racional", "Personalizada"],
-            key="tfs_k_name",
-        )
+        k_name = st.selectbox("Tipo de κ", ["Constante", "Linear", "Senoidal", "Racional", "Personalizada"], key="tfs_k_name")
         k_params: Dict[str, float] = {}
         k_custom = "1 + 0.2*sin(s)"
         if k_name == "Constante":
@@ -1329,15 +1444,12 @@ def render_spatial_reconstruction() -> None:
         elif k_name == "Racional":
             k_params["a"] = st.slider("κ: numerador", 0.1, 3.0, 1.0, 0.1, key="tfs_k_ra")
             k_params["b"] = st.slider("κ: parâmetro", 0.05, 2.0, 0.2, 0.05, key="tfs_k_rb")
-        elif k_name == "Personalizada":
+        else:
+            st.caption("A expressão deve permanecer positiva em todo o intervalo.")
             k_custom = st.text_input("κ(s)", k_custom, key="tfs_k_custom")
 
         st.subheader("Torção τ(s)")
-        t_name = st.selectbox(
-            "Tipo de τ",
-            ["Nula", "Constante", "Linear", "Senoidal", "Racional", "Personalizada"],
-            key="tfs_t_name",
-        )
+        t_name = st.selectbox("Tipo de τ", ["Nula", "Constante", "Linear", "Senoidal", "Racional", "Personalizada"], key="tfs_t_name")
         t_params: Dict[str, float] = {}
         t_custom = "0.3*cos(s)"
         if t_name == "Constante":
@@ -1355,52 +1467,45 @@ def render_spatial_reconstruction() -> None:
         elif t_name == "Personalizada":
             t_custom = st.text_input("τ(s)", t_custom, key="tfs_t_custom")
 
-        st.subheader("Intervalo")
+        st.subheader("Intervalo e dados iniciais")
         smin = st.number_input("s mínimo", value=0.0, key="tfs_smin")
         smax = st.number_input("s máximo", value=15.0, key="tfs_smax")
         resolution = st.slider("Resolução", 300, 1600, 700, 100, key="tfs_resolution")
-
-        st.subheader("Ponto inicial")
-        p0 = np.array(
-            [
-                st.number_input("x₀", value=0.0, key="tfs_x0"),
-                st.number_input("y₀", value=0.0, key="tfs_y0"),
-                st.number_input("z₀", value=0.0, key="tfs_z0"),
-            ],
-            dtype=float,
-        )
+        p0 = np.array([
+            st.number_input("x₀", value=0.0, key="tfs_x0"),
+            st.number_input("y₀", value=0.0, key="tfs_y0"),
+            st.number_input("z₀", value=0.0, key="tfs_z0"),
+        ], dtype=float)
 
         st.subheader("Triedro inicial")
-        frame_option = st.selectbox(
-            "Dados iniciais",
-            ["Triedro canônico", "Personalizado"],
-            key="tfs_frame_option",
-        )
+        frame_option = st.selectbox("Dados iniciais", ["Triedro canônico", "Personalizado"], key="tfs_frame_option")
         if frame_option == "Triedro canônico":
             v1 = np.array([1.0, 0.0, 0.0])
             v2 = np.array([0.0, 1.0, 0.0])
         else:
             st.caption("Os vetores serão ortonormalizados automaticamente.")
-            v1 = np.array(
-                [
-                    st.number_input("T inicial: x", value=1.0, key="tfs_Tx"),
-                    st.number_input("T inicial: y", value=0.0, key="tfs_Ty"),
-                    st.number_input("T inicial: z", value=0.0, key="tfs_Tz"),
-                ]
-            )
-            v2 = np.array(
-                [
-                    st.number_input("N auxiliar: x", value=0.0, key="tfs_Nx"),
-                    st.number_input("N auxiliar: y", value=1.0, key="tfs_Ny"),
-                    st.number_input("N auxiliar: z", value=0.0, key="tfs_Nz"),
-                ]
-            )
+            v1 = np.array([
+                st.number_input("T inicial: x", value=1.0, key="tfs_Tx"),
+                st.number_input("T inicial: y", value=0.0, key="tfs_Ty"),
+                st.number_input("T inicial: z", value=0.0, key="tfs_Tz"),
+            ])
+            v2 = np.array([
+                st.number_input("N auxiliar: x", value=0.0, key="tfs_Nx"),
+                st.number_input("N auxiliar: y", value=1.0, key="tfs_Ny"),
+                st.number_input("N auxiliar: z", value=0.0, key="tfs_Nz"),
+            ])
 
         if smax > smin:
             smove = st.slider("Ponto móvel s₀", float(smin), float(smax), float((smin + smax) / 2), key="tfs_smove")
         else:
             smove = float(smin)
+
+        st.subheader("Objetos geométricos")
         vector_scale = st.slider("Escala do triedro", 0.1, 3.0, 1.0, 0.1, key="tfs_scale")
+        show_tangent = st.checkbox("Reta tangente", True, key="tfs_show_tangent")
+        show_osculating = st.checkbox("Plano osculador", False, key="tfs_show_osc")
+        show_normal_plane = st.checkbox("Plano normal", False, key="tfs_show_normal_plane")
+        show_rectifying = st.checkbox("Plano retificante", False, key="tfs_show_rect")
 
     if smax <= smin:
         st.error(r"O domínio deve satisfazer $s_{\min}<s_{\max}$.")
@@ -1410,6 +1515,8 @@ def render_spatial_reconstruction() -> None:
     try:
         kappa = invariant_function(s, k_name, k_params, k_custom, "curvatura")
         tau = invariant_function(s, t_name, t_params, t_custom, "torção")
+        kappa = np.broadcast_to(kappa, s.shape).astype(float)
+        tau = np.broadcast_to(tau, s.shape).astype(float)
         if not np.all(np.isfinite(kappa)) or not np.all(np.isfinite(tau)):
             raise ValueError("As funções produziram valores não finitos.")
         if np.any(kappa <= 0):
@@ -1421,36 +1528,67 @@ def render_spatial_reconstruction() -> None:
         return
 
     i0 = nearest_index(s, smove)
+    p = alpha[i0]
 
     col1, col2 = st.columns(2)
     with col1:
-        st.plotly_chart(make_scalar_plot(s, kappa, "s", "κ(s)", "Curvatura prescrita"), use_container_width=True)
+        st.plotly_chart(make_scalar_plot(s, kappa, "s", "κ(s)", "Curvatura escolhida"), use_container_width=True)
     with col2:
-        st.plotly_chart(make_scalar_plot(s, tau, "s", "τ(s)", "Torção prescrita"), use_container_width=True)
+        st.plotly_chart(make_scalar_plot(s, tau, "s", "τ(s)", "Torção escolhida"), use_container_width=True)
 
-    fig = make_spatial_plot(alpha, alpha[i0], T[i0], N[i0], B[i0], vector_scale, True, False)
+    fig = make_spatial_plot(alpha, p, T[i0], N[i0], B[i0], vector_scale, True, show_tangent)
+    fig.data[0].name = "Curva reconstruída"
+    fig.data[1].name = "Ponto α(s₀)"
+
+    extent = max(np.ptp(alpha[:, 0]), np.ptp(alpha[:, 1]), np.ptp(alpha[:, 2]), 1.0)
+    plane_size = 0.22 * extent
+    grid = np.linspace(-plane_size, plane_size, 8)
+    U, V = np.meshgrid(grid, grid)
+
+    def add_plane(e1: np.ndarray, e2: np.ndarray, name: str, opacity: float = 0.25) -> None:
+        points = p[None, None, :] + U[:, :, None] * e1[None, None, :] + V[:, :, None] * e2[None, None, :]
+        fig.add_trace(go.Surface(
+            x=points[:, :, 0], y=points[:, :, 1], z=points[:, :, 2],
+            name=name, showscale=False, opacity=opacity, showlegend=True,
+            colorscale=[[0, "lightgray"], [1, "lightgray"]],
+        ))
+
+    if show_osculating:
+        add_plane(T[i0], N[i0], "Plano osculador")
+    if show_normal_plane:
+        add_plane(N[i0], B[i0], "Plano normal")
+    if show_rectifying:
+        add_plane(T[i0], B[i0], "Plano retificante")
+
     st.plotly_chart(fig, use_container_width=True)
 
-    c1, c2, c3 = st.columns(3)
-    with c1:
-        st.metric("‖T‖", fmt(np.linalg.norm(T[i0]), 8))
-        st.metric("⟨T,N⟩", fmt(np.dot(T[i0], N[i0]), 8))
-    with c2:
-        st.metric("‖N‖", fmt(np.linalg.norm(N[i0]), 8))
-        st.metric("⟨T,B⟩", fmt(np.dot(T[i0], B[i0]), 8))
-    with c3:
-        st.metric("‖B‖", fmt(np.linalg.norm(B[i0]), 8))
-        st.metric("⟨N,B⟩", fmt(np.dot(N[i0], B[i0]), 8))
+    st.markdown("### Objetos no ponto selecionado")
+    m1, m2, m3, m4 = st.columns(4)
+    m1.metric("s₀", fmt(s[i0]))
+    m2.metric("κ(s₀)", fmt(kappa[i0]))
+    m3.metric("τ(s₀)", fmt(tau[i0]))
+    m4.metric("Raio 1/κ", fmt(1.0 / kappa[i0]))
 
-    st.markdown("### Dados no ponto móvel")
-    st.latex(rf"s_0={fmt(s[i0])}")
-    st.latex(rf"\alpha(s_0)={vector_latex(alpha[i0])}")
-    st.latex(rf"T(s_0)={vector_latex(T[i0])}")
-    st.latex(rf"N(s_0)={vector_latex(N[i0])}")
-    st.latex(rf"B(s_0)={vector_latex(B[i0])}")
+    d1, d2 = st.columns(2)
+    with d1:
+        st.latex(rf"\alpha(s_0)={vector_latex(p)}")
+        st.latex(rf"T(s_0)={vector_latex(T[i0])}")
+        st.latex(rf"N(s_0)={vector_latex(N[i0])}")
+        st.latex(rf"B(s_0)={vector_latex(B[i0])}")
+    with d2:
+        st.latex(rf"\|T(s_0)\|={fmt(np.linalg.norm(T[i0]), 8)}")
+        st.latex(rf"\langle T,N\rangle={fmt(np.dot(T[i0], N[i0]), 8)}")
+        st.latex(rf"\langle T,B\rangle={fmt(np.dot(T[i0], B[i0]), 8)}")
+        st.latex(rf"\langle N,B\rangle={fmt(np.dot(N[i0], B[i0]), 8)}")
+
+    if np.max(np.abs(tau)) < 1e-8:
+        st.info("Como τ(s)=0 em todo o intervalo, a curva reconstruída é plana.")
+    elif np.max(kappa) - np.min(kappa) < 1e-8 and np.max(tau) - np.min(tau) < 1e-8:
+        st.info("Como κ e τ são constantes, a curva reconstruída é uma hélice circular, a menos de movimento rígido.")
 
     st.success(
-        "Para os dados iniciais escolhidos, a solução numérica representa a curva determinada por κ e τ. Outros dados iniciais produzem uma curva congruente por uma isometria do espaço."
+        "A curva espacial exibida foi encontrada numericamente resolvendo o sistema de Frenet–Serret "
+        "para as funções κ(s) e τ(s) escolhidas."
     )
 
 
