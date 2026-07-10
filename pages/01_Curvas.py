@@ -892,11 +892,8 @@ def render_planar_analysis() -> None:
         total_length = arc[-1]
         st.latex(r"s(t)=\int_{t_{\min}}^t\|\alpha'(u)\|\,du")
         st.latex(rf"L(\alpha)\approx {fmt(total_length)}")
-        st.plotly_chart(
-            make_scalar_plot(t, arc, "t", "s(t)", "Comprimento de arco acumulado"),
-            use_container_width=True,
-        )
         st.markdown(
+            "O comprimento acumulado é obtido integrando a rapidez ao longo do parâmetro. "
             "Uma reparametrização altera a maneira como o traço é percorrido, mas não necessariamente altera o traço geométrico."
         )
 
@@ -966,7 +963,7 @@ def reconstruct_planar_curve(
 
 
 def render_planar_reconstruction() -> None:
-    st.header("Teorema Fundamental das Curvas Planas")
+    st.header("Obter uma curva plana através do Teorema Fundamental")
     st.markdown(
         r"Uma função curvatura $\kappa(s)$ determina uma curva plana parametrizada pelo comprimento de arco, depois de fixados o ponto e a direção tangente iniciais."
     )
@@ -1036,7 +1033,7 @@ def render_planar_reconstruction() -> None:
     alpha, theta, T, N = reconstruct_planar_curve(s, kappa, p0, math.radians(theta0_deg))
     i0 = nearest_index(s, smove)
 
-    st.subheader("Função escolhida e reconstrução")
+    st.subheader("Função escolhida e obtenção da curva")
     c1, c2 = st.columns(2)
     with c1:
         st.markdown("**Curvatura prescrita**")
@@ -1047,10 +1044,10 @@ def render_planar_reconstruction() -> None:
         st.latex(rf"\alpha(s_{{\min}})=({x0:.3g},{y0:.3g})")
         st.latex(rf"\theta_0={theta0_deg}^\circ")
         st.latex(r"T(s)=(\cos\theta(s),\sin\theta(s))")
-    st.caption("A curva abaixo é obtida integrando α′(s)=T(s).")
+    st.caption("A curva abaixo é obtida integrando $\alpha'(s)=T(s)$.")
 
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=alpha[:, 0], y=alpha[:, 1], mode="lines", name="Curva reconstruída", line=dict(width=5)))
+    fig.add_trace(go.Scatter(x=alpha[:, 0], y=alpha[:, 1], mode="lines", name="Curva obtida", line=dict(width=5)))
     fig.add_trace(go.Scatter(x=[alpha[i0, 0]], y=[alpha[i0, 1]], mode="markers", name="Ponto móvel", marker=dict(size=10)))
     add_2d_vector(fig, alpha[i0], T[i0], "T(s₀)", 1.0)
     add_2d_vector(fig, alpha[i0], N[i0], "N(s₀)", 1.0)
@@ -1339,9 +1336,9 @@ def solve_frenet_system(
 
 
 def render_spatial_reconstruction() -> None:
-    st.header("Teorema Fundamental das Curvas no Espaço")
+    st.header("Obter uma curva espacial através do Teorema Fundamental")
     st.markdown(
-        r"Dadas funções $\kappa(s)>0$ e $\tau(s)$, o sistema de Frenet–Serret reconstrói uma curva espacial parametrizada pelo comprimento de arco."
+        r"Dadas funções $\kappa(s)>0$ e $\tau(s)$, o sistema de Frenet–Serret permite obter uma curva espacial parametrizada pelo comprimento de arco."
     )
 
     st.latex(r"\alpha'=T")
@@ -1458,7 +1455,7 @@ def render_spatial_reconstruction() -> None:
         T0, N0, B0 = orthonormal_frame(v1, v2)
         alpha, T, N, B = solve_frenet_system(s, kappa, tau, p0, T0, N0, B0)
     except Exception as exc:
-        st.error(f"Não foi possível reconstruir a curva: {exc}")
+        st.error(f"Não foi possível obter a curva: {exc}")
         return
 
     i0 = nearest_index(s, smove)
@@ -1495,6 +1492,62 @@ def render_spatial_reconstruction() -> None:
     st.latex(rf"N(s_0)={vector_latex(N[i0])}")
     st.latex(rf"B(s_0)={vector_latex(B[i0])}")
 
+    kappa0 = float(kappa[i0])
+    tau0 = float(tau[i0])
+    alpha_prime0 = T[i0]
+    T_prime0 = kappa0 * N[i0]
+    N_prime0 = -kappa0 * T[i0] + tau0 * B[i0]
+    B_prime0 = -tau0 * N[i0]
+    step_size = float(s[1] - s[0]) if len(s) > 1 else float("nan")
+
+    with st.expander("Cálculos do sistema de Frenet–Serret", expanded=True):
+        st.markdown(
+            r"No ponto móvel escolhido, substituímos os valores de $\kappa(s_0)$, "
+            r"$\tau(s_0)$ e do triedro $(T,N,B)$ nas equações de Frenet–Serret."
+        )
+        st.latex(rf"\kappa(s_0)={fmt(kappa0)},\qquad \tau(s_0)={fmt(tau0)}")
+
+        st.markdown("**1. Derivada da curva**")
+        st.latex(r"\alpha'(s_0)=T(s_0)")
+        st.latex(rf"\alpha'(s_0)={vector_latex(alpha_prime0)}")
+
+        st.markdown("**2. Derivada do vetor tangente**")
+        st.latex(r"T'(s_0)=\kappa(s_0)N(s_0)")
+        st.latex(
+            rf"T'(s_0)={fmt(kappa0)}{vector_latex(N[i0])}={vector_latex(T_prime0)}"
+        )
+
+        st.markdown("**3. Derivada do vetor normal principal**")
+        st.latex(r"N'(s_0)=-\kappa(s_0)T(s_0)+\tau(s_0)B(s_0)")
+        st.latex(
+            rf"N'(s_0)=-{fmt(kappa0)}{vector_latex(T[i0])}"
+            rf"+{fmt(tau0)}{vector_latex(B[i0])}={vector_latex(N_prime0)}"
+        )
+
+        st.markdown("**4. Derivada do vetor binormal**")
+        st.latex(r"B'(s_0)=-\tau(s_0)N(s_0)")
+        st.latex(
+            rf"B'(s_0)=-{fmt(tau0)}{vector_latex(N[i0])}={vector_latex(B_prime0)}"
+        )
+
+        st.markdown("**5. Integração numérica do sistema**")
+        st.markdown(
+            "O intervalo é dividido em pequenos passos e o sistema é integrado pelo método "
+            "de Runge–Kutta de quarta ordem. Em cada passo, o estado é"
+        )
+        st.latex(r"Y=(\alpha,T,N,B)\in\mathbb{R}^{12}")
+        st.latex(r"Y'=F(s,Y)")
+        st.latex(rf"h\approx {fmt(step_size,8)}")
+        st.latex(r"k_1=F(s_i,Y_i)")
+        st.latex(r"k_2=F\left(s_i+\frac h2,Y_i+\frac h2k_1\right)")
+        st.latex(r"k_3=F\left(s_i+\frac h2,Y_i+\frac h2k_2\right)")
+        st.latex(r"k_4=F(s_i+h,Y_i+hk_3)")
+        st.latex(r"Y_{i+1}=Y_i+\frac h6(k_1+2k_2+2k_3+k_4)")
+        st.info(
+            "Após cada passo, os vetores T, N e B são ortonormalizados numericamente "
+            "para controlar os pequenos erros de arredondamento."
+        )
+
     st.success(
         "Para os dados iniciais escolhidos, a solução numérica representa a curva determinada por κ e τ. Outros dados iniciais produzem uma curva congruente por uma isometria do espaço."
     )
@@ -1524,7 +1577,7 @@ with st.sidebar:
     )
     mode = st.radio(
         "Escolha o modo",
-        ["Analisar uma curva conhecida", "Reconstruir pelo Teorema Fundamental"],
+        ["Analisar uma curva conhecida", "Obter a curva através do Teorema Fundamental"],
         key="mode",
     )
 
