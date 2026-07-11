@@ -806,7 +806,7 @@ def _reparam_display(alpha_fun, I, phi_fun, J, alpha_formula, phi_formula, dim, 
 def render_planar_reparam():
     st.header("Mudança de parâmetro e comprimento de arco em ℝ²")
     st.warning(r"Usamos $t$ para uma parametrização arbitrária, $u$ para uma mudança de parâmetro geral e $s$ exclusivamente para o comprimento de arco.")
-    options=["Reta do capítulo: φ(u)=2u+1","Circunferência: orientação preservada","Circunferência: orientação invertida","Reta pelo comprimento de arco","Circunferência unitária pelo comprimento de arco","Curva do Teorema: κ=0","Curva do Teorema: κ constante","Curva do Teorema: κ linear","Curva do Teorema: κ senoidal","Curva do Teorema: κ racional","Curva personalizada"]
+    options=["Reta do capítulo: φ(u)=2u+1","Circunferência: orientação preservada","Circunferência: orientação invertida","Reta pelo comprimento de arco","Circunferência unitária pelo comprimento de arco","Curva personalizada"]
     with st.sidebar:
         ex=st.selectbox("Exemplo de reparametrização",options,key="rp2_ex");progress=st.slider("Posição do ponto no percurso",0.,1.,.35,.01,key="rp2_prog")
     if ex=="Reta do capítulo: φ(u)=2u+1":
@@ -843,7 +843,7 @@ def render_planar_reparam():
 def render_spatial_reparam():
     st.header("Mudança de parâmetro e comprimento de arco em ℝ³")
     st.warning(r"Usamos $t$ para uma parametrização arbitrária, $u$ para uma mudança geral e $s$ exclusivamente para o comprimento de arco.")
-    options=["Hélice pelo comprimento de arco","Hélice: orientação preservada","Hélice: orientação invertida","Curva do Teorema: κ e τ constantes","Curva do Teorema: κ variável e τ=0","Curva personalizada"]
+    options=["Hélice pelo comprimento de arco","Hélice: orientação preservada","Hélice: orientação invertida","Curva personalizada"]
     with st.sidebar:
         ex=st.selectbox("Exemplo",options,key="rs2_ex");progress=st.slider("Posição do ponto",0.,1.,.35,.01,key="rs2_prog");A0=st.slider("a",.2,3.,1.,.1,key="rs2_a");b0=st.slider("b",.1,2.,.5,.1,key="rs2_b")
     if ex.startswith("Hélice"):
@@ -953,8 +953,45 @@ st.title("Curvas planas e espaciais")
 st.markdown("Módulo interativo baseado no capítulo de curvas: exemplos, regularidade, reparametrização, comprimento de arco, referenciais de Frenet e Teoremas Fundamentais.")
 render_fundamental_concepts()
 with st.sidebar:
-    st.divider();st.header("Ambiente de estudo");env=st.radio("Espaço",["Curvas planas em ℝ²","Curvas espaciais em ℝ³"],key="env");mode=st.radio("Modo",["Analisar uma curva conhecida","Estudar reparametrização e comprimento de arco","Obter a curva através do Teorema Fundamental"],key="mode")
+    st.divider()
+    st.header("Ambiente de estudo")
+    env = st.radio(
+        "Espaço",
+        ["Curvas planas em ℝ²", "Curvas espaciais em ℝ³"],
+        key="env",
+    )
+    mode = st.radio(
+        "Modo",
+        [
+            "Analisar uma curva conhecida",
+            "Obter a curva através do Teorema Fundamental",
+        ],
+        key="mode",
+    )
+
+    analysis_topic = None
+    if mode == "Analisar uma curva conhecida":
+        st.markdown("#### Conteúdo da análise")
+        analysis_topic = st.radio(
+            "Escolha o conteúdo",
+            [
+                "Objetos geométricos e movimentos rígidos",
+                "Mudança de parâmetro e comprimento de arco",
+            ],
+            key="analysis_topic",
+        )
+
 if env.startswith("Curvas planas"):
-    {"Analisar uma curva conhecida":render_planar_analysis,"Estudar reparametrização e comprimento de arco":render_planar_reparam,"Obter a curva através do Teorema Fundamental":render_planar_theorem}[mode]()
+    if mode == "Obter a curva através do Teorema Fundamental":
+        render_planar_theorem()
+    elif analysis_topic == "Mudança de parâmetro e comprimento de arco":
+        render_planar_reparam()
+    else:
+        render_planar_analysis()
 else:
-    {"Analisar uma curva conhecida":render_spatial_analysis,"Estudar reparametrização e comprimento de arco":render_spatial_reparam,"Obter a curva através do Teorema Fundamental":render_spatial_theorem}[mode]()
+    if mode == "Obter a curva através do Teorema Fundamental":
+        render_spatial_theorem()
+    elif analysis_topic == "Mudança de parâmetro e comprimento de arco":
+        render_spatial_reparam()
+    else:
+        render_spatial_analysis()
