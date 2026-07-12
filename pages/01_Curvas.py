@@ -297,7 +297,7 @@ def render_fundamental_concepts():
     with st.expander("📘 Conceitos fundamentais e convenção dos parâmetros",expanded=False):
         st.latex(r"\alpha:I\subset\mathbb R\longrightarrow\mathbb R^n,\qquad \alpha(t)=(x_1(t),\ldots,x_n(t))")
         st.markdown(r"""
-O parâmetro **$t$** será usado para uma parametrização arbitrária. Para uma mudança de parâmetro geral, escreveremos $u\in J$ e $\beta(u)=\alpha(\varphi(u))$. Reservaremos o símbolo **$s$ exclusivamente para o comprimento de arco**. Assim, quando aparece $\alpha(s)$, entende-se que $\|\alpha'(s)\|=1$.
+O parâmetro **$t$** será usado para uma parametrização arbitrária. Para uma mudança de parâmetro geral, escreveremos $u\in J$ e $\beta(u)=\alpha(\phi(u))$. Reservaremos o símbolo **$s$ exclusivamente para o comprimento de arco**. Assim, quando aparece $\alpha(s)$, entende-se que $\|\alpha'(s)\|=1$.
 """)
         c1,c2=st.columns(2)
         with c1:
@@ -305,8 +305,8 @@ O parâmetro **$t$** será usado para uma parametrização arbitrária. Para uma
             st.latex(r"\alpha'(t)=(x_1'(t),\ldots,x_n'(t))")
             st.latex(r"\alpha'(t)\ne0\quad\Longleftrightarrow\quad\text{regularidade em }t")
         with c2:
-            st.latex(r"\beta(u)=\alpha(\varphi(u)),\qquad \varphi:J\to I")
-            st.latex(r"\beta'(u)=\alpha'(\varphi(u))\varphi'(u)")
+            st.latex(r"\beta(u)=\alpha(\phi(u)),\qquad \phi:J\to I")
+            st.latex(r"\beta'(u)=\alpha'(\phi(u))\phi'(u)")
             st.latex(r"s(t)=\int_{t_0}^{t}\|\alpha'(v)\|\,dv")
 
 # ============================================================
@@ -386,20 +386,20 @@ def render_planar_reparam():
     options=["Reta: φ(u)=2u+1 (Ex. 2.2.1)","Circunferência: mesma orientação (Ex. 2.2.2)","Circunferência: orientação oposta (Ex. 2.2.2)","Reta pelo comprimento de arco (Ex. 2.2.4)","Circunferência unitária pelo comprimento de arco (Ex. 2.2.5)"]
     with st.sidebar: ex=st.selectbox("Exemplo de reparametrização",options,key="rp_ex");progress=st.slider("Posição do ponto no percurso",0.,1.,.35,.01,key="rp_prog")
     if ex.startswith("Reta: φ"):
-        I=(-1.,3.);J=(-1.,1.); phi=lambda u:2*u+1; al=lambda t:np.column_stack((t,2*t)); be=lambda u:al(phi(u)); formula=r"\varphi:J=(-1,1)\to I=(-1,3),\quad\varphi(u)=2u+1,\quad\beta(u)=\alpha(\varphi(u))"; deriv=2.; arc=False
+        I=(-1.,3.);J=(-1.,1.); phi=lambda u:2*u+1; al=lambda t:np.column_stack((t,2*t)); be=lambda u:al(phi(u)); formula=r"\phi:J=(-1,1)\to I=(-1,3),\quad\phi(u)=2u+1,\quad\beta(u)=\alpha(\phi(u))"; deriv=2.; arc=False
     elif "mesma orientação" in ex:
-        I=(0.,2*np.pi);J=(0.,np.pi);phi=lambda u:2*u; al=lambda t:np.column_stack((3+np.cos(t),3+np.sin(t)));be=lambda u:al(phi(u));formula=r"\varphi_1:J=[0,\pi]\to I=[0,2\pi],\quad\varphi_1(u)=2u";deriv=2.;arc=False
+        I=(0.,2*np.pi);J=(0.,np.pi);phi=lambda u:2*u; al=lambda t:np.column_stack((3+np.cos(t),3+np.sin(t)));be=lambda u:al(phi(u));formula=r"\phi_1:J=[0,\pi]\to I=[0,2\pi],\quad\phi_1(u)=2u";deriv=2.;arc=False
     elif "oposta" in ex:
-        I=(0.,2*np.pi);J=(0.,2*np.pi);phi=lambda u:2*np.pi-u;al=lambda t:np.column_stack((3+np.cos(t),3+np.sin(t)));be=lambda u:al(phi(u));formula=r"\varphi_2:J=[0,2\pi]\to I=[0,2\pi],\quad\varphi_2(u)=2\pi-u";deriv=-1.;arc=False
+        I=(0.,2*np.pi);J=(0.,2*np.pi);phi=lambda u:2*np.pi-u;al=lambda t:np.column_stack((3+np.cos(t),3+np.sin(t)));be=lambda u:al(phi(u));formula=r"\phi_2:J=[0,2\pi]\to I=[0,2\pi],\quad\phi_2(u)=2\pi-u";deriv=-1.;arc=False
     elif "Reta pelo" in ex:
-        I=(-3.,3.);J=(-3*np.sqrt(5),3*np.sqrt(5));phi=lambda s:s/np.sqrt(5);al=lambda t:np.column_stack((t,2*t));be=lambda s:al(phi(s));formula=r"\ell(t)=\sqrt5\,t,\quad \varphi:J\to I,\quad\varphi(s)=\ell^{-1}(s)=\frac{s}{\sqrt5}";deriv=1/np.sqrt(5);arc=True
+        I=(-3.,3.);J=(-3*np.sqrt(5),3*np.sqrt(5));phi=lambda s:s/np.sqrt(5);al=lambda t:np.column_stack((t,2*t));be=lambda s:al(phi(s));formula=r"\ell(t)=\sqrt5\,t,\quad \phi:J\to I,\quad\phi(s)=\ell^{-1}(s)=\frac{s}{\sqrt5}";deriv=1/np.sqrt(5);arc=True
     else:
-        I=(0.,2*np.pi);J=(0.,2*np.pi);phi=lambda s:s;al=lambda t:np.column_stack((np.cos(t),np.sin(t)));be=lambda s:al(phi(s));formula=r"\ell(t)=t,\quad\varphi(s)=s,\quad\beta(s)=(\cos s,\sin s)";deriv=1.;arc=True
+        I=(0.,2*np.pi);J=(0.,2*np.pi);phi=lambda s:s;al=lambda t:np.column_stack((np.cos(t),np.sin(t)));be=lambda s:al(phi(s));formula=r"\ell(t)=t,\quad\phi(s)=s,\quad\beta(s)=(\cos s,\sin s)";deriv=1.;arc=True
     tg=np.linspace(*I,700);ug=np.linspace(*J,700);A=al(tg);B=be(ug);u0=J[0]+progress*(J[1]-J[0]);t0=phi(u0);pa=al(np.array([t0]))[0];pb=be(np.array([u0]))[0]
-    st.latex(r"\alpha:I\to\mathbb R^2,\qquad \beta:J\to\mathbb R^2,\qquad \beta=\alpha\circ\varphi");st.latex(formula);st.latex(rf"\varphi'={fmt(deriv)}")
+    st.latex(r"\alpha:I\to\mathbb R^2,\qquad \beta:J\to\mathbb R^2,\qquad \beta=\alpha\circ\phi");st.latex(formula);st.latex(rf"\phi'={fmt(deriv)}")
     if deriv>0:st.success("A mudança de parâmetro é crescente: a orientação é preservada.")
     else:st.error("A mudança de parâmetro é decrescente: a orientação é invertida.")
-    label="s" if arc else "u";st.latex(rf"{label}_0={fmt(u0)},\qquad t_0=\varphi({label}_0)={fmt(t0)},\qquad \beta({label}_0)=\alpha(t_0)")
+    label="s" if arc else "u";st.latex(rf"{label}_0={fmt(u0)},\qquad t_0=\phi({label}_0)={fmt(t0)},\qquad \beta({label}_0)=\alpha(t_0)")
     _two_plot_layout(A,B,pa,pb,"Parametrização original α(t)",f"Reparametrização β({label})")
     if arc:st.latex(r"\|\beta'(s)\|=1\qquad\text{(parâmetro igual ao comprimento de arco)}")
 
@@ -411,16 +411,16 @@ def render_spatial_reparam():
         ex=st.selectbox("Exemplo",["Hélice pelo comprimento de arco (Ex. 2.2.3)","Hélice com orientação preservada","Hélice com orientação invertida"],key="rs_ex");A0=st.slider("a",.2,3.,1.,.1,key="rs_a");b=st.slider("b",.1,2.,.5,.1,key="rs_b");progress=st.slider("Posição do ponto",0.,1.,.35,.01,key="rs_prog")
     I=(-np.pi,np.pi);al=lambda t:np.column_stack((A0*np.cos(t),A0*np.sin(t),b*t))
     if "comprimento" in ex:
-        v=np.sqrt(A0*A0+b*b);J=(-np.pi*v,np.pi*v);phi=lambda s:s/v;formula=rf"\ell(t)=\sqrt{{a^2+b^2}}t,\quad\varphi(s)=\frac{{s}}{{\sqrt{{a^2+b^2}}}}";deriv=1/v;label="s";arc=True
+        v=np.sqrt(A0*A0+b*b);J=(-np.pi*v,np.pi*v);phi=lambda s:s/v;formula=rf"\ell(t)=\sqrt{{a^2+b^2}}t,\quad\phi(s)=\frac{{s}}{{\sqrt{{a^2+b^2}}}}";deriv=1/v;label="s";arc=True
     elif "preservada" in ex:
-        J=(-np.pi/2,np.pi/2);phi=lambda u:2*u;formula=r"\varphi(u)=2u";deriv=2.;label="u";arc=False
+        J=(-np.pi/2,np.pi/2);phi=lambda u:2*u;formula=r"\phi(u)=2u";deriv=2.;label="u";arc=False
     else:
-        J=(-np.pi,np.pi);phi=lambda u:-u;formula=r"\varphi(u)=-u";deriv=-1.;label="u";arc=False
+        J=(-np.pi,np.pi);phi=lambda u:-u;formula=r"\phi(u)=-u";deriv=-1.;label="u";arc=False
     be=lambda q:al(phi(q));tg=np.linspace(*I,700);ug=np.linspace(*J,700);u0=J[0]+progress*(J[1]-J[0]);t0=phi(u0);A=al(tg);B=be(ug);pa=al(np.array([t0]))[0];pb=be(np.array([u0]))[0]
-    st.latex(r"\alpha:I\to\mathbb R^3,\qquad\beta:J\to\mathbb R^3,\quad\beta=\alpha\circ\varphi");st.latex(formula);st.latex(rf"\varphi'={fmt(deriv)}")
+    st.latex(r"\alpha:I\to\mathbb R^3,\qquad\beta:J\to\mathbb R^3,\quad\beta=\alpha\circ\phi");st.latex(formula);st.latex(rf"\phi'={fmt(deriv)}")
     if deriv>0:st.success("Orientação preservada.")
     else:st.error("Orientação invertida.")
-    st.latex(rf"{label}_0={fmt(u0)},\quad t_0=\varphi({label}_0)={fmt(t0)}")
+    st.latex(rf"{label}_0={fmt(u0)},\quad t_0=\phi({label}_0)={fmt(t0)}")
     _two_plot_layout(A,B,pa,pb,"Hélice α(t)",f"Hélice reparametrizada β({label})",True)
     if arc:st.latex(r"\|\beta'(s)\|=1")
 
@@ -792,14 +792,14 @@ def _reparam_display(alpha_fun, I, phi_fun, J, alpha_formula, phi_formula, dim, 
         st.error("A função φ não envia todo o domínio J para o intervalo I escolhido."); return
     A=alpha_fun(pg); B=alpha_fun(phivals); u0=J[0]+progress*(J[1]-J[0]);t0=float(phi_fun(np.array([u0]))[0]);pa=alpha_fun(np.array([t0]))[0];pb=alpha_fun(np.array([t0]))[0]
     st.latex(rf"\alpha:I=[{fmt(I[0],3)},{fmt(I[1],3)}]\to\mathbb R^{dim},\qquad {alpha_formula}")
-    st.latex(rf"\varphi:J=[{fmt(J[0],3)},{fmt(J[1],3)}]\to I,\qquad {phi_formula}")
-    st.latex(rf"\beta:J\to\mathbb R^{dim},\qquad \beta({new_parameter})=\alpha(\varphi({new_parameter}))")
+    st.latex(rf"\phi:J=[{fmt(J[0],3)},{fmt(J[1],3)}]\to I,\qquad {phi_formula}")
+    st.latex(rf"\beta:J\to\mathbb R^{dim},\qquad \beta({new_parameter})=\alpha(\phi({new_parameter}))")
     dphi=np.gradient(phivals,ug,edge_order=2); d0=float(dphi[nearest_index(ug,u0)])
-    st.latex(rf"\varphi'({new_parameter}_0)={fmt(d0,5)}")
+    st.latex(rf"\phi'({new_parameter}_0)={fmt(d0,5)}")
     if np.all(dphi>0): st.success("φ é estritamente crescente; a reparametrização preserva a orientação.")
     elif np.all(dphi<0): st.error("φ é estritamente decrescente; a reparametrização inverte a orientação.")
     else: st.warning("φ' muda de sinal ou se anula; esta escolha não define uma mudança de parâmetro difeomorfa em todo J.")
-    st.latex(rf"{new_parameter}_0={fmt(u0)},\qquad {original_parameter}_0=\varphi({new_parameter}_0)={fmt(t0)},\qquad \beta({new_parameter}_0)=\alpha({original_parameter}_0)")
+    st.latex(rf"{new_parameter}_0={fmt(u0)},\qquad {original_parameter}_0=\phi({new_parameter}_0)={fmt(t0)},\qquad \beta({new_parameter}_0)=\alpha({original_parameter}_0)")
     _two_plot_layout(A,B,pa,pb,f"Curva original α({original_parameter})",f"Curva reparametrizada β({new_parameter})",dim==3)
 
 
@@ -810,13 +810,13 @@ def render_planar_reparam():
     with st.sidebar:
         ex=st.selectbox("Exemplo de reparametrização",options,key="rp2_ex");progress=st.slider("Posição do ponto no percurso",0.,1.,.35,.01,key="rp2_prog")
     if ex=="Reta do capítulo: φ(u)=2u+1":
-        I=(-1.,3.);J=(-1.,1.);alpha=lambda t:np.column_stack((t,2*t));phi=lambda u:2*u+1;af=r"\alpha(t)=(t,2t)";pf=r"\varphi(u)=2u+1";_reparam_display(alpha,I,phi,J,af,pf,2,progress);return
+        I=(-1.,3.);J=(-1.,1.);alpha=lambda t:np.column_stack((t,2*t));phi=lambda u:2*u+1;af=r"\alpha(t)=(t,2t)";pf=r"\phi(u)=2u+1";_reparam_display(alpha,I,phi,J,af,pf,2,progress);return
     if ex.startswith("Circunferência:"):
-        I=(0.,2*np.pi);alpha=lambda t:np.column_stack((3+np.cos(t),3+np.sin(t)));J=(0.,np.pi) if "preservada" in ex else (0.,2*np.pi);phi=(lambda u:2*u) if "preservada" in ex else (lambda u:2*np.pi-u);pf=r"\varphi(u)=2u" if "preservada" in ex else r"\varphi(u)=2\pi-u";_reparam_display(alpha,I,phi,J,r"\alpha(t)=(3+\cos t,3+\sin t)",pf,2,progress);return
+        I=(0.,2*np.pi);alpha=lambda t:np.column_stack((3+np.cos(t),3+np.sin(t)));J=(0.,np.pi) if "preservada" in ex else (0.,2*np.pi);phi=(lambda u:2*u) if "preservada" in ex else (lambda u:2*np.pi-u);pf=r"\phi(u)=2u" if "preservada" in ex else r"\phi(u)=2\pi-u";_reparam_display(alpha,I,phi,J,r"\alpha(t)=(3+\cos t,3+\sin t)",pf,2,progress);return
     if ex=="Reta pelo comprimento de arco":
-        I=(-3.,3.);J=(-3*np.sqrt(5),3*np.sqrt(5));alpha=lambda t:np.column_stack((t,2*t));phi=lambda s:s/np.sqrt(5);_reparam_display(alpha,I,phi,J,r"\alpha(t)=(t,2t)",r"\varphi(s)=s/\sqrt5",2,progress,new_parameter="s");st.latex(r"\|\beta'(s)\|=1");return
+        I=(-3.,3.);J=(-3*np.sqrt(5),3*np.sqrt(5));alpha=lambda t:np.column_stack((t,2*t));phi=lambda s:s/np.sqrt(5);_reparam_display(alpha,I,phi,J,r"\alpha(t)=(t,2t)",r"\phi(s)=s/\sqrt5",2,progress,new_parameter="s");st.latex(r"\|\beta'(s)\|=1");return
     if ex=="Circunferência unitária pelo comprimento de arco":
-        I=(0.,2*np.pi);J=I;alpha=lambda t:np.column_stack((np.cos(t),np.sin(t)));phi=lambda s:s;_reparam_display(alpha,I,phi,J,r"\alpha(t)=(\cos t,\sin t)",r"\varphi(s)=s",2,progress,new_parameter="s");st.latex(r"\|\beta'(s)\|=1");return
+        I=(0.,2*np.pi);J=I;alpha=lambda t:np.column_stack((np.cos(t),np.sin(t)));phi=lambda s:s;_reparam_display(alpha,I,phi,J,r"\alpha(t)=(\cos t,\sin t)",r"\phi(s)=s",2,progress,new_parameter="s");st.latex(r"\|\beta'(s)\|=1");return
     if ex.startswith("Curva do Teorema"):
         with st.sidebar:
             smin=st.number_input("s mínimo",value=0.,key="rp2_th_smin");smax=st.number_input("s máximo",value=10.,key="rp2_th_smax");theta0=st.slider("θ₀",-180,180,0,5,key="rp2_th_theta")
@@ -831,12 +831,12 @@ def render_planar_reparam():
         try:J,m,b=_affine_phi_controls("rp2_th",I)
         except ValueError as exc:st.error(str(exc));return
         phi=lambda u:m*u+b
-        _reparam_display(alpha_s,I,phi,J,rf"\alpha'(s)=T(s),\ {kf}",rf"\varphi(u)={fmt(m,4)}u+{fmt(b,4)}",2,progress,original_parameter="s",new_parameter="u");return
+        _reparam_display(alpha_s,I,phi,J,rf"\alpha'(s)=T(s),\ {kf}",rf"\phi(u)={fmt(m,4)}u+{fmt(b,4)}",2,progress,original_parameter="s",new_parameter="u");return
     with st.sidebar:
         xexpr=st.text_input("x(t)","cos(t)",key="rp2_cx");yexpr=st.text_input("y(t)","sin(t)",key="rp2_cy");imin=st.number_input("t mínimo",value=0.,key="rp2_imin");imax=st.number_input("t máximo",value=float(2*np.pi),key="rp2_imax");jmin=st.number_input("u mínimo",value=0.,key="rp2_jmin");jmax=st.number_input("u máximo",value=1.,key="rp2_jmax");phiexpr=st.text_input("φ(u)","2*pi*u",key="rp2_phi")
     if imax<=imin or jmax<=jmin:st.error("Os intervalos devem ser válidos.");return
     alpha=lambda q:np.column_stack((eval_expr(xexpr,"t",q),eval_expr(yexpr,"t",q)));phi=lambda u:eval_expr(phiexpr,"u",u)
-    try:_reparam_display(alpha,(imin,imax),phi,(jmin,jmax),rf"\alpha(t)=({xexpr},{yexpr})",rf"\varphi(u)={phiexpr}",2,progress)
+    try:_reparam_display(alpha,(imin,imax),phi,(jmin,jmax),rf"\alpha(t)=({xexpr},{yexpr})",rf"\phi(u)={phiexpr}",2,progress)
     except Exception as exc:st.error(f"Não foi possível avaliar a reparametrização: {exc}")
 
 
@@ -849,9 +849,9 @@ def render_spatial_reparam():
     if ex.startswith("Hélice"):
         I=(-np.pi,np.pi);alpha=lambda t:np.column_stack((A0*np.cos(t),A0*np.sin(t),b0*t))
         if "comprimento" in ex:
-            v=np.sqrt(A0*A0+b0*b0);J=(-np.pi*v,np.pi*v);phi=lambda s:s/v;pf=rf"\varphi(s)=\dfrac{{s}}{{\sqrt{{{A0:.3g}^2+{b0:.3g}^2}}}}";new="s"
-        elif "preservada" in ex:J=(-np.pi/2,np.pi/2);phi=lambda u:2*u;pf=r"\varphi(u)=2u";new="u"
-        else:J=(-np.pi,np.pi);phi=lambda u:-u;pf=r"\varphi(u)=-u";new="u"
+            v=np.sqrt(A0*A0+b0*b0);J=(-np.pi*v,np.pi*v);phi=lambda s:s/v;pf=rf"\phi(s)=\dfrac{{s}}{{\sqrt{{{A0:.3g}^2+{b0:.3g}^2}}}}";new="s"
+        elif "preservada" in ex:J=(-np.pi/2,np.pi/2);phi=lambda u:2*u;pf=r"\phi(u)=2u";new="u"
+        else:J=(-np.pi,np.pi);phi=lambda u:-u;pf=r"\phi(u)=-u";new="u"
         _reparam_display(alpha,I,phi,J,rf"\alpha(t)=({A0:.3g}\cos t,{A0:.3g}\sin t,{b0:.3g}t)",pf,3,progress,new_parameter=new)
         if new=="s":st.latex(r"\|\beta'(s)\|=1")
         return
@@ -864,12 +864,12 @@ def render_spatial_reparam():
         try:J,m,b=_affine_phi_controls("rs2_th",I)
         except ValueError as exc:st.error(str(exc));return
         phi=lambda u:m*u+b
-        _reparam_display(alpha_s,I,phi,J,rf"\alpha'(s)=T(s),\ {af}",rf"\varphi(u)={fmt(m,4)}u+{fmt(b,4)}",3,progress,original_parameter="s",new_parameter="u");return
+        _reparam_display(alpha_s,I,phi,J,rf"\alpha'(s)=T(s),\ {af}",rf"\phi(u)={fmt(m,4)}u+{fmt(b,4)}",3,progress,original_parameter="s",new_parameter="u");return
     with st.sidebar:
         xexpr=st.text_input("x(t)","cos(t)",key="rs2_cx");yexpr=st.text_input("y(t)","sin(t)",key="rs2_cy");zexpr=st.text_input("z(t)","0.3*t",key="rs2_cz");imin=st.number_input("t mínimo",value=-3.,key="rs2_imin");imax=st.number_input("t máximo",value=3.,key="rs2_imax");jmin=st.number_input("u mínimo",value=-1.,key="rs2_jmin");jmax=st.number_input("u máximo",value=1.,key="rs2_jmax");phiexpr=st.text_input("φ(u)","3*u",key="rs2_phi")
     if imax<=imin or jmax<=jmin:st.error("Os intervalos devem ser válidos.");return
     alpha=lambda q:np.column_stack((eval_expr(xexpr,"t",q),eval_expr(yexpr,"t",q),eval_expr(zexpr,"t",q)));phi=lambda u:eval_expr(phiexpr,"u",u)
-    try:_reparam_display(alpha,(imin,imax),phi,(jmin,jmax),rf"\alpha(t)=({xexpr},{yexpr},{zexpr})",rf"\varphi(u)={phiexpr}",3,progress)
+    try:_reparam_display(alpha,(imin,imax),phi,(jmin,jmax),rf"\alpha(t)=({xexpr},{yexpr},{zexpr})",rf"\phi(u)={phiexpr}",3,progress)
     except Exception as exc:st.error(f"Não foi possível avaliar a reparametrização: {exc}")
 
 
