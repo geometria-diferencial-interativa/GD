@@ -103,7 +103,7 @@ with st.sidebar:
 
     st.page_link(
         "pages/01_Curvas.py",
-        label="1. Curvas em R³"
+        label="1. Curvas"
     )
 
     st.page_link(
