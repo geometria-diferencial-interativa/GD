@@ -873,6 +873,217 @@ def render_spatial_frenet_at_point(
         )
 
 
+
+def _cluster_indices(indices: np.ndarray) -> list:
+    """Agrupa índices consecutivos para não repetir o mesmo ponto irregular."""
+    if len(indices) == 0:
+        return []
+    groups = [[int(indices[0])]]
+    for idx in indices[1:]:
+        idx = int(idx)
+        if idx <= groups[-1][-1] + 1:
+            groups[-1].append(idx)
+        else:
+            groups.append([idx])
+    return groups
+
+
+def _irregularity_description(
+    parameter: np.ndarray,
+    alpha: np.ndarray,
+    alpha1: np.ndarray,
+    max_points: int = 5,
+) -> tuple:
+    """Determina numericamente a regularidade e descreve os pontos irregulares."""
+    speed = np.linalg.norm(alpha1, axis=1)
+    finite_speed = speed[np.isfinite(speed)]
+    scale = max(float(np.max(finite_speed)) if finite_speed.size else 0.0, 1.0)
+    tolerance = max(1e-7, 1e-5 * scale)
+    irregular = np.where((~np.isfinite(speed)) | (speed <= tolerance))[0]
+
+    if len(irregular) == 0:
+        return True, "A curva é regular em todo o intervalo considerado."
+
+    groups = _cluster_indices(irregular)
+    descriptions = []
+    for group in groups[:max_points]:
+        idx = group[len(group) // 2]
+        descriptions.append(
+            rf"$t={fmt(parameter[idx])}$, no ponto "
+            rf"$\alpha(t)={vector_latex(alpha[idx])}$"
+        )
+
+    remaining = len(groups) - len(descriptions)
+    text = "A curva não é regular. Encontramos irregularidade em " + "; ".join(descriptions)
+    if remaining > 0:
+        text += f"; e em mais {remaining} região(ões) do intervalo"
+    text += "."
+    return False, text
+
+
+def _approximately_simple(alpha: np.ndarray) -> tuple:
+    """
+    Teste numérico de injetividade.
+
+    Desconsideramos pontos muito próximos na malha, pois eles representam
+    vizinhanças do mesmo trecho da curva, e procuramos coincidências entre
+    pontos não consecutivos.
+    """
+    points = np.asarray(alpha, dtype=float)
+    finite = np.all(np.isfinite(points), axis=1)
+    points = points[finite]
+    n = len(points)
+
+    if n < 4:
+        return True, "Não encontramos auto-interseções na amostragem utilizada."
+
+    extent = float(np.linalg.norm(np.ptp(points, axis=0)))
+    tolerance = max(1e-6, 1e-3 * max(extent, 1.0))
+    neighborhood = max(4, n // 100)
+
+    # Fazemos o teste em blocos para evitar alocação excessiva de memória.
+    block = 250
+    for start in range(0, n, block):
+        stop = min(start + block, n)
+        distances = np.linalg.norm(
+            points[start:stop, None, :] - points[None, :, :],
+            axis=2,
+        )
+        row_indices = np.arange(start, stop)[:, None]
+        col_indices = np.arange(n)[None, :]
+        nonlocal_pairs = np.abs(row_indices - col_indices) > neighborhood
+        if np.any((distances <= tolerance) & nonlocal_pairs):
+            return (
+                False,
+                "A curva não é simples na amostragem considerada, pois encontramos "
+                "pontos não consecutivos do parâmetro com imagens coincidentes "
+                "ou numericamente muito próximas.",
+            )
+
+    return (
+        True,
+        "A curva é simples na amostragem considerada: não encontramos "
+        "auto-interseções numericamente.",
+    )
+
+
+def _arc_length_status(alpha1: np.ndarray) -> bool:
+    """Verifica numericamente se a velocidade é identicamente igual a 1."""
+    speed = np.linalg.norm(alpha1, axis=1)
+    finite = np.isfinite(speed)
+    return bool(
+        np.any(finite)
+        and np.all(finite)
+        and np.allclose(speed, 1.0, rtol=2e-3, atol=2e-3)
+    )
+
+
+def _orientation_reparametrizations_text(
+    tmin: float,
+    tmax: float,
+    dimension: int,
+) -> str:
+    """Texto das duas reparametrizações afins canônicas do intervalo [0,1]."""
+    length = tmax - tmin
+    return rf"""
+**Reparametrizações exibidas pela plataforma**
+
+Tomamos $J=[0,1]$ e $I=[{fmt(tmin)},{fmt(tmax)}]$.
+
+- Preservando a orientação:
+  $\phi_+:J\longrightarrow I$,
+  $\phi_+(u)={fmt(tmin)}+{fmt(length)}u$ e
+  $\phi_+'(u)={fmt(length)}>0$.
+  Assim,
+  $\beta_+:J\longrightarrow\mathbb R^{dimension}$ é dada por
+  $\beta_+(u)=\alpha(\phi_+(u))$.
+
+- Invertendo a orientação:
+  $\phi_-:J\longrightarrow I$,
+  $\phi_-(u)={fmt(tmax)}-{fmt(length)}u$ e
+  $\phi_-'(u)=-{fmt(length)}<0$.
+  Assim,
+  $\beta_-:J\longrightarrow\mathbb R^{dimension}$ é dada por
+  $\beta_-(u)=\alpha(\phi_-(u))$.
+"""
+
+
+def render_curve_analysis_box(
+    data: CurveData,
+    tmin: float,
+    tmax: float,
+    selected_index: int,
+    dimension: int,
+    curvature: float,
+    torsion: Optional[float] = None,
+):
+    """Apresenta, em azul, a análise global e pontual da curva."""
+    regular, regular_text = _irregularity_description(
+        data.parameter,
+        data.alpha,
+        data.alpha1,
+    )
+    simple, simple_text = _approximately_simple(data.alpha)
+    arc_length = _arc_length_status(data.alpha1)
+
+    curvature_text = (
+        rf"$\kappa(t_0)={latex_scalar(curvature)}$"
+        if np.isfinite(curvature)
+        else r"$\kappa(t_0)$ não está definida"
+    )
+
+    items = [
+        rf"**Domínio e contradomínio:** "
+        rf"$\alpha:[{fmt(tmin)},{fmt(tmax)}]\longrightarrow\mathbb R^{dimension}$.",
+        f"**Regularidade:** {regular_text}",
+        f"**Simplicidade:** {simple_text}",
+        rf"**No ponto escolhido:** $t_0={fmt(data.parameter[selected_index])}$ e "
+        + curvature_text
+        + ".",
+    ]
+
+    if dimension == 3:
+        torsion_text = (
+            rf"$\tau(t_0)={latex_scalar(torsion)}$"
+            if torsion is not None and np.isfinite(torsion)
+            else r"$\tau(t_0)$ não está definida"
+        )
+        items[-1] = items[-1][:-1] + rf", {torsion_text}."
+
+    if arc_length:
+        items.append(
+            r"**Comprimento de arco:** a curva está parametrizada pelo "
+            r"comprimento de arco, pois $\|\alpha'(t)\|=1$ em todo o intervalo. "
+            r"Nesse caso, podemos escrever o parâmetro como $s$."
+        )
+    else:
+        speed = np.linalg.norm(data.alpha1, axis=1)
+        finite_speed = speed[np.isfinite(speed)]
+        if finite_speed.size:
+            speed_min = float(np.min(finite_speed))
+            speed_max = float(np.max(finite_speed))
+            items.append(
+                rf"**Comprimento de arco:** a curva não está parametrizada pelo "
+                rf"comprimento de arco, pois a velocidade varia entre "
+                rf"${fmt(speed_min)}$ e ${fmt(speed_max)}$, ou é constante diferente de $1$."
+            )
+        else:
+            items.append(
+                "**Comprimento de arco:** não conseguimos verificar a condição "
+                r"$\|\alpha'(t)\|=1$ porque a velocidade não está definida na malha."
+            )
+
+    message = "\n\n".join(items)
+    if not arc_length:
+        message += "\n\n" + _orientation_reparametrizations_text(
+            tmin,
+            tmax,
+            dimension,
+        )
+
+    st.info(message)
+
+
 def render_planar_analysis():
     st.header(r"Análise de curvas planas em $\mathbb R^2$")
     names=["Reta y=2x (Ex. 2.2.1 e 2.2.4)","Circunferência (Ex. 2.1.1 e 2.1.10)","Parábola (Ex. 2.1.2 e 2.1.14)","Exponencial (Ex. 2.1.9)","Senoide (Ex. 2.1.11)","Catenária (Ex. 2.1.12)","Cúspide singular (Ex. 2.1.13)","Auto-interseção (Ex. 2.1.15)","Não diferenciável: valor absoluto (Ex. 2.1.5–2.1.6)","Não diferenciável: raiz cúbica (Ex. 2.1.7)","Diferenciável, mas não C¹ (Ex. 2.1.8)","Personalizada"]
@@ -899,8 +1110,17 @@ def render_planar_analysis():
     if N is not None and np.isfinite(kap) and abs(kap)>1e-8: radius=1/abs(kap); center=p+N/kap
     Q,a,meta=rigid_controls_2d_full("pa2"); det=meta["det"]
     alphaF=transform_points(data.alpha,Q,a); pF=Q@p+a; vF=Q@v; TF=Q@T if T is not None else None; NF=det*(Q@N) if N is not None else None; centerF=Q@center+a if center is not None else None
-    st.latex(rf"\alpha:[{fmt(tmin,3)},{fmt(tmax,3)}]\longrightarrow\mathbb R^2,\qquad {data.latex}")
-    st.info(data.note)
+    st.latex(rf"\alpha:[{fmt(tmin)},{fmt(tmax)}]\longrightarrow\mathbb R^2,\qquad {data.latex}")
+    render_curve_analysis_box(
+        data=data,
+        tmin=tmin,
+        tmax=tmax,
+        selected_index=i,
+        dimension=2,
+        curvature=kap,
+    )
+    if data.note:
+        st.caption(data.note)
     c1,c2=st.columns(2)
     with c1: st.plotly_chart(plot2(data.alpha,p,T,N,v,center,radius,(True,True,True,True,True,True),scale,title="Curva original"),use_container_width=True)
     with c2: st.plotly_chart(plot2(alphaF,pF,TF,NF,vF,centerF,radius,(True,True,True,True,True,True),scale,title="Curva após o movimento rígido"),use_container_width=True)
@@ -939,8 +1159,18 @@ def render_spatial_analysis():
     i=nearest_index(t,t0); p=data.alpha[i]; v1=data.alpha1[i];v2=data.alpha2[i];T=safe_unit(v1);B=safe_unit(np.cross(v1,v2));N=safe_unit(np.cross(B,T)) if B is not None and T is not None else None
     kap=spatial_curvature(data.alpha1,data.alpha2)[i];tau=spatial_torsion(data.alpha1,data.alpha2,data.alpha3)[i]
     Q,a,meta=rigid_controls_3d_full("sa2");det=meta["det"];alphaF=transform_points(data.alpha,Q,a);pF=Q@p+a;TF=Q@T if T is not None else None;NF=det*(Q@N) if N is not None else None;BF=det*(Q@B) if B is not None else None
-    st.latex(rf"\alpha:[{fmt(tmin,3)},{fmt(tmax,3)}]\longrightarrow\mathbb R^3,\qquad {data.latex}")
-    st.info(data.note)
+    st.latex(rf"\alpha:[{fmt(tmin)},{fmt(tmax)}]\longrightarrow\mathbb R^3,\qquad {data.latex}")
+    render_curve_analysis_box(
+        data=data,
+        tmin=tmin,
+        tmax=tmax,
+        selected_index=i,
+        dimension=3,
+        curvature=kap,
+        torsion=tau,
+    )
+    if data.note:
+        st.caption(data.note)
     c1,c2=st.columns(2)
     with c1: st.plotly_chart(plot3(data.alpha,p,T,N,B,scale,title="Curva original"),use_container_width=True)
     with c2: st.plotly_chart(plot3(alphaF,pF,TF,NF,BF,scale,title="Curva após o movimento rígido"),use_container_width=True)
