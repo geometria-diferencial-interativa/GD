@@ -503,7 +503,7 @@ def render_spatial_theorem():
     if np.any(k<=0):st.error("O teorema clássico requer κ(s)>0 em todo o intervalo.");return
     T0,N0,B0=orthonormal_frame(np.array([1.,0.,0.]),np.array([0.,1.,0.]));alpha,T,N,B=solve_frenet(s,k,tau,np.zeros(3),T0,N0,B0);i=nearest_index(s,sm);Q,a,desc=rigid_controls_3d("st");det=round(np.linalg.det(Q));alphaF=transform_points(alpha,Q,a);TF=Q@T[i];NF=det*(Q@N[i]);BF=det*(Q@B[i]);tauF=det*tau[i]
     st.markdown("**Funções escolhidas:**");st.latex(rf"\kappa(s_0)={fmt(k[i])},\qquad\tau(s_0)={fmt(tau[i])}");st.latex(desc);st.plotly_chart(plot3(alphaF,alphaF[i],TF,NF,BF,scale),use_container_width=True)
-    with st.expander("Cálculos do sistema de Frenet–Serret",True):
+    with st.expander("Cálculos do sistema de Frenet",True):
         Tp=k[i]*N[i];Np=-k[i]*T[i]+tau[i]*B[i];Bp=-tau[i]*N[i]
         st.latex(rf"\alpha'(s_0)=T(s_0)={vector_latex(T[i])}");st.latex(rf"T'(s_0)=\kappa N={vector_latex(Tp)}");st.latex(rf"N'(s_0)=-\kappa T+\tau B={vector_latex(Np)}");st.latex(rf"B'(s_0)=-\tau N={vector_latex(Bp)}")
         st.caption("Após uma isometria que inverte a orientação, a curvatura permanece e a torção troca de sinal.")
@@ -814,11 +814,11 @@ def render_spatial_frenet_at_point(
     kappa: float,
     tau: float,
 ):
-    """Exibe o sistema de Frenet--Serret avaliado no ponto escolhido."""
-    st.markdown("### Sistema de Frenet--Serret no ponto escolhido")
+    """Exibe o sistema de Frenet avaliado no ponto escolhido."""
+    st.markdown("### Sistema de Frenet no ponto escolhido")
     if T is None:
         st.warning(
-            "Não podemos calcular o sistema de Frenet--Serret neste ponto, "
+            "Não podemos calcular o sistema de Frenet neste ponto, "
             "pois a curva não é regular."
         )
         return
@@ -1348,8 +1348,8 @@ def render_spatial_theorem():
     c1,c2=st.columns(2)
     with c1:st.plotly_chart(plot3(alpha,alpha[i],T[i],N[i],B[i],scale,title="Curva determinada por κ e τ"),use_container_width=True)
     with c2:st.plotly_chart(plot3(alphaF,alphaF[i],TF,NF,BF,scale,title="Curva após movimento rígido"),use_container_width=True)
-    render_rigid_math_3d(meta,r"\alpha(s)\text{ solução do sistema de Frenet--Serret}",smin,smax)
-    with st.expander("Cálculos do sistema de Frenet–Serret",True):
+    render_rigid_math_3d(meta,r"\alpha(s)\text{ solução do sistema de Frenet}",smin,smax)
+    with st.expander("Cálculos do sistema de Frenet",True):
         Tp=k[i]*N[i];Np=-k[i]*T[i]+tau[i]*B[i];Bp=-tau[i]*N[i]
         st.latex(rf"\alpha'(s_0)=T(s_0)={vector_latex(T[i])}");st.latex(rf"T'(s_0)=\kappa N={vector_latex(Tp)}");st.latex(rf"N'(s_0)=-\kappa T+\tau B={vector_latex(Np)}");st.latex(rf"B'(s_0)=-\tau N={vector_latex(Bp)}")
 
