@@ -1,4 +1,5 @@
 import math
+import re
 from dataclasses import dataclass
 from typing import Dict, Optional, Tuple
 
@@ -25,7 +26,7 @@ with st.sidebar:
 # ============================================================
 # UTILITÁRIOS
 # ============================================================
-def fmt(x: float, digits: int = 5) -> str:
+def fmt(x: float, digits: int = 2) -> str:
     try:
         v = float(x)
         return f"{v:.{digits}f}" if np.isfinite(v) else "não definido"
@@ -33,12 +34,12 @@ def fmt(x: float, digits: int = 5) -> str:
         return "não definido"
 
 
-def latex_scalar(x: float, digits: int = 5) -> str:
+def latex_scalar(x: float, digits: int = 2) -> str:
     text = fmt(x, digits)
     return r"\text{não definido}" if text == "não definido" else text
 
 
-def vector_latex(v: np.ndarray, digits: int = 5) -> str:
+def vector_latex(v: np.ndarray, digits: int = 2) -> str:
     return r"\left(" + r",\;".join(fmt(x, digits) for x in np.asarray(v).reshape(-1)) + r"\right)"
 
 
@@ -135,10 +136,10 @@ def planar_curve(t: np.ndarray, name: str, params: Dict[str, float], custom=None
         r=params["r"]; xc=params.get("xc",0.); yc=params.get("yc",0.)
         a=np.column_stack((xc+r*np.cos(t),yc+r*np.sin(t)))
         d1=np.column_stack((-r*np.sin(t),r*np.cos(t))); d2=np.column_stack((-r*np.cos(t),-r*np.sin(t))); d3=np.column_stack((r*np.sin(t),-r*np.cos(t)))
-        return CurveData(t,a,d1,d2,d3,rf"\alpha(t)=({xc:.3g}+{r:.3g}\cos t,{yc:.3g}+{r:.3g}\sin t)","Curvatura constante e curva regular.")
+        return CurveData(t,a,d1,d2,d3,rf"\alpha(t)=({xc:.2f}+{r:.2f}\cos t,{yc:.2f}+{r:.2f}\sin t)","Curvatura constante e curva regular.")
     if name == "Parábola (Ex. 2.1.2 e 2.1.14)":
         a0=params.get("a",1.); a=np.column_stack((t,a0*t**2)); d1=np.column_stack((np.ones_like(t),2*a0*t)); d2=np.column_stack((z,np.full_like(t,2*a0))); d3=np.zeros_like(a)
-        return CurveData(t,a,d1,d2,d3,rf"\alpha(t)=(t,{a0:.3g}t^2)","Curva regular e simples.")
+        return CurveData(t,a,d1,d2,d3,rf"\alpha(t)=(t,{a0:.2f}t^2)","Curva regular e simples.")
     if name == "Exponencial (Ex. 2.1.9)":
         a=np.column_stack((np.exp(t),t)); d1=np.column_stack((np.exp(t),np.ones_like(t))); d2=np.column_stack((np.exp(t),z)); d3=np.column_stack((np.exp(t),z))
         return CurveData(t,a,d1,d2,d3,r"\alpha(t)=(e^t,t)","No instante t=0, a reta tangente é y=x-1.")
@@ -147,7 +148,7 @@ def planar_curve(t: np.ndarray, name: str, params: Dict[str, float], custom=None
         return CurveData(t,a,d1,d2,d3,r"\alpha(t)=(t,\sin t)","No instante t=0, a reta tangente é y=x.")
     if name == "Catenária (Ex. 2.1.12)":
         a0=params["a"]; a=np.column_stack((t,a0*np.cosh(t/a0))); d1=np.column_stack((np.ones_like(t),np.sinh(t/a0))); d2=np.column_stack((z,np.cosh(t/a0)/a0)); d3=np.column_stack((z,np.sinh(t/a0)/a0**2))
-        return CurveData(t,a,d1,d2,d3,rf"\alpha(t)=\left(t,{a0:.3g}\cosh(t/{a0:.3g})\right)","No instante t=0, a reta tangente é horizontal.")
+        return CurveData(t,a,d1,d2,d3,rf"\alpha(t)=\left(t,{a0:.2f}\cosh(t/{a0:.2f})\right)","No instante t=0, a reta tangente é horizontal.")
     if name == "Cúspide singular (Ex. 2.1.13)":
         a=np.column_stack((t**3,t**2)); d1=np.column_stack((3*t**2,2*t)); d2=np.column_stack((6*t,2*np.ones_like(t))); d3=np.column_stack((6*np.ones_like(t),z))
         return CurveData(t,a,d1,d2,d3,r"\alpha(t)=(t^3,t^2)","A curva não é regular em t=0.")
@@ -175,13 +176,13 @@ def spatial_curve(t: np.ndarray, name: str, params: Dict[str,float], custom=None
     if name == "Reta espacial (Ex. 2.1.3)":
         p=np.array([params["x0"],params["y0"],params["z0"]]); v=np.array([params["vx"],params["vy"],params["vz"]])
         a=p+t[:,None]*v; d1=np.tile(v,(len(t),1)); d2=np.zeros_like(a); d3=np.zeros_like(a)
-        return CurveData(t,a,d1,d2,d3,rf"\alpha(t)={vector_latex(p,3)}+t{vector_latex(v,3)}","Curvatura nula.")
+        return CurveData(t,a,d1,d2,d3,rf"\alpha(t)={vector_latex(p, 2)}+t{vector_latex(v, 2)}","Curvatura nula.")
     if name == "Hélice circular (Ex. 2.1.4 e 2.2.3)":
         A=params["a"]; b=params["b"]; a=np.column_stack((A*np.cos(t),A*np.sin(t),b*t)); d1=np.column_stack((-A*np.sin(t),A*np.cos(t),np.full_like(t,b))); d2=np.column_stack((-A*np.cos(t),-A*np.sin(t),z)); d3=np.column_stack((A*np.sin(t),-A*np.cos(t),z))
-        return CurveData(t,a,d1,d2,d3,rf"\alpha(t)=({A:.3g}\cos t,{A:.3g}\sin t,{b:.3g}t)",rf"Velocidade constante $\sqrt{{a^2+b^2}}={math.sqrt(A*A+b*b):.4f}$.")
+        return CurveData(t,a,d1,d2,d3,rf"\alpha(t)=({A:.2f}\cos t,{A:.2f}\sin t,{b:.2f}t)",rf"Velocidade constante $\sqrt{{a^2+b^2}}={math.sqrt(A*A+b*b):.2f}$.")
     if name == "Parábola espacial":
         c=params["c"]; a=np.column_stack((t,t**2,c*t)); d1=np.column_stack((np.ones_like(t),2*t,np.full_like(t,c))); d2=np.column_stack((z,2*np.ones_like(t),z)); d3=np.zeros_like(a)
-        return CurveData(t,a,d1,d2,d3,rf"\alpha(t)=(t,t^2,{c:.3g}t)")
+        return CurveData(t,a,d1,d2,d3,rf"\alpha(t)=(t,t^2,{c:.2f}t)")
     if name == "Cúbica torcida":
         a=np.column_stack((t,t**2,t**3)); d1=np.column_stack((np.ones_like(t),2*t,3*t**2)); d2=np.column_stack((z,2*np.ones_like(t),6*t)); d3=np.column_stack((z,z,6*np.ones_like(t)))
         return CurveData(t,a,d1,d2,d3,r"\alpha(t)=(t,t^2,t^3)")
@@ -190,7 +191,7 @@ def spatial_curve(t: np.ndarray, name: str, params: Dict[str,float], custom=None
         return CurveData(t,a,d1,d2,d3,r"\alpha(t)=((R+r\cos nt)\cos mt,(R+r\cos nt)\sin mt,r\sin nt)","Derivadas aproximadas numericamente.",True)
     if name == "Curva de Viviani":
         A=params["a"]; a=np.column_stack((A*(1+np.cos(t)),A*np.sin(t),2*A*np.sin(t/2))); d1,d2,d3=numerical_derivatives(a,t)
-        return CurveData(t,a,d1,d2,d3,rf"\alpha(t)=({A:.3g}(1+\cos t),{A:.3g}\sin t,{2*A:.3g}\sin(t/2))","Derivadas aproximadas numericamente.",True)
+        return CurveData(t,a,d1,d2,d3,rf"\alpha(t)=({A:.2f}(1+\cos t),{A:.2f}\sin t,{2*A:.2f}\sin(t/2))","Derivadas aproximadas numericamente.",True)
     if name == "Personalizada":
         a=np.column_stack((eval_expr(custom["x"],"t",t),eval_expr(custom["y"],"t",t),eval_expr(custom["z"],"t",t))); d1,d2,d3=numerical_derivatives(a,t)
         return CurveData(t,a,d1,d2,d3,rf"\alpha(t)=({custom['x']},{custom['y']},{custom['z']})","Derivadas aproximadas numericamente.",True)
@@ -226,9 +227,9 @@ def rigid_controls_2d(key: str) -> Tuple[np.ndarray,np.ndarray,str]:
             elif line=="reta y=x": Q=np.array([[0.,1.],[1.,0.]])
             else:
                 deg=st.slider("Ângulo θ da reta",-180,180,30,5,key=f"{key}_reflang"); u=np.array([np.cos(np.radians(deg)),np.sin(np.radians(deg))]); Q=2*np.outer(u,u)-np.eye(2)
-            desc=r"F(p)=Mp,\quad M^TM=I,\ \det M=-1"
+            desc=r"F(p)=M(p),\quad M^TM=I,\ \det M=-1"
         elif typ=="Reflexão deslizante":
-            deg=st.slider("Ângulo do eixo",-180,180,0,5,key=f"{key}_glang"); dist=st.slider("Deslizamento",-5.0,5.0,1.0,0.1,key=f"{key}_gld"); u=np.array([np.cos(np.radians(deg)),np.sin(np.radians(deg))]); Q=2*np.outer(u,u)-np.eye(2); a=dist*u; desc=r"F(p)=Mp+a\quad\text{(reflexão seguida de translação paralela ao eixo)}"
+            deg=st.slider("Ângulo do eixo",-180,180,0,5,key=f"{key}_glang"); dist=st.slider("Deslizamento",-5.0,5.0,1.0,0.1,key=f"{key}_gld"); u=np.array([np.cos(np.radians(deg)),np.sin(np.radians(deg))]); Q=2*np.outer(u,u)-np.eye(2); a=dist*u; desc=r"F(p)=M(p)+a\quad\text{(reflexão seguida de translação paralela ao eixo)}"
     return Q,a,desc
 
 
@@ -249,7 +250,7 @@ def rigid_controls_3d(key: str) -> Tuple[np.ndarray,np.ndarray,str]:
         elif typ=="Reflexão em plano":
             n=np.array([st.number_input("Normal: x",value=0.,key=f"{key}_nx"),st.number_input("Normal: y",value=0.,key=f"{key}_ny"),st.number_input("Normal: z",value=1.,key=f"{key}_nz")]); u=safe_unit(n)
             if u is None: raise ValueError("A normal do plano não pode ser nula.")
-            Q=np.eye(3)-2*np.outer(u,u); desc=r"F(p)=Mp,\quad M=I-2nn^T"
+            Q=np.eye(3)-2*np.outer(u,u); desc=r"F(p)=M(p),\quad M=I-2nn^T"
     return Q,a,desc
 
 
@@ -451,7 +452,7 @@ def render_planar_theorem():
         smin=st.number_input("s mínimo",value=0.,key="pt_smin");smax=st.number_input("s máximo",value=12.,key="pt_smax");n=st.slider("Resolução",300,1800,900,100,key="pt_n");x0=st.number_input("x₀",value=0.,key="pt_x0");y0=st.number_input("y₀",value=0.,key="pt_y0");ang=st.slider("θ₀",-180,180,0,5,key="pt_ang");sm=st.slider("Ponto s₀",float(smin),float(smax),float((smin+smax)/2),key="pt_sm") if smax>smin else smin
     if smax<=smin:st.error("s mínimo deve ser menor que s máximo.");return
     s=np.linspace(smin,smax,n);k=planar_kappa(s,name,p,expr);alpha,T,N=reconstruct_planar(s,k,np.array([x0,y0]),np.radians(ang));i=nearest_index(s,sm);Q,a,desc=rigid_controls_2d("pt");det=np.linalg.det(Q);alphaF=transform_points(alpha,Q,a);TF=Q@T[i];NF=det*(Q@N[i]);pF=alphaF[i]
-    formula={"Nula":r"\kappa(s)=0","Constante":rf"\kappa(s)={p.get('c',0):.3g}","Linear":rf"\kappa(s)={p.get('a',0):.3g}s","Senoidal":rf"\kappa(s)={p.get('a',0):.3g}\sin({p.get('b',1):.3g}s)","Racional":rf"\kappa(s)=\frac{{{p.get('a',0):.3g}}}{{1+s^2}}","Personalizada":rf"\kappa(s)={expr}"}[name]
+    formula={"Nula":r"\kappa(s)=0","Constante":rf"\kappa(s)={p.get('c',0):.2f}","Linear":rf"\kappa(s)={p.get('a',0):.2f}s","Senoidal":rf"\kappa(s)={p.get('a',0):.2f}\sin({p.get('b',1):.2f}s)","Racional":rf"\kappa(s)=\frac{{{p.get('a',0):.2f}}}{{1+s^2}}","Personalizada":rf"\kappa(s)={expr}"}[name]
     st.markdown("**Função escolhida e movimento rígido:**");st.latex(formula);st.latex(desc);st.plotly_chart(plot2(alphaF,pF,TF,NF,show=(False,True,True,True,True,False)),use_container_width=True)
 
 
@@ -513,13 +514,13 @@ def render_spatial_theorem():
 # MELHORIAS: MOVIMENTOS RÍGIDOS, REPARAMETRIZAÇÃO E TEOREMA
 # ============================================================
 
-def matrix_latex(M: np.ndarray, digits: int = 4) -> str:
+def matrix_latex(M: np.ndarray, digits: int = 2) -> str:
     rows = [" & ".join(fmt(v, digits) for v in row) for row in np.asarray(M)]
     return r"\begin{pmatrix}" + r"\\".join(rows) + r"\end{pmatrix}"
 
 
 def interval_latex(a: float, b: float, variable: str = "t") -> str:
-    return rf"{variable}\in[{fmt(a,3)},{fmt(b,3)}]"
+    return rf"{variable}\in[{fmt(a, 2)},{fmt(b, 2)}]"
 
 
 def rigid_controls_2d_full(key: str):
@@ -637,68 +638,321 @@ def rigid_controls_3d_full(key: str):
     return Q, a, meta
 
 
-def render_rigid_math_2d(meta, alpha_latex: str, tmin: float, tmax: float):
-    Q, a = meta["Q"], meta["a"]
+
+def _latex_number(value: float) -> str:
+    value = float(value)
+    if abs(value) < 5e-12:
+        value = 0.0
+    return fmt(value, 2)
+
+
+def _linear_combination_latex(coefficients, components, offset=0.0) -> str:
+    terms = []
+    for coefficient, component in zip(coefficients, components):
+        coefficient = float(coefficient)
+        if abs(coefficient) < 5e-12:
+            continue
+        if abs(coefficient - 1.0) < 5e-12:
+            term = rf"\left({component}\right)"
+        elif abs(coefficient + 1.0) < 5e-12:
+            term = rf"-\left({component}\right)"
+        else:
+            term = rf"{_latex_number(coefficient)}\left({component}\right)"
+        terms.append(term)
+    if abs(float(offset)) >= 5e-12:
+        terms.append(_latex_number(offset))
+    if not terms:
+        return "0.00"
+    expression = terms[0]
+    for term in terms[1:]:
+        expression += term if term.startswith("-") else "+" + term
+    return expression
+
+
+def planar_component_formulas(name: str, params, custom=None):
+    if name.startswith("Reta y=2x"):
+        return ("t", "2t")
+    if name.startswith("Circunferência"):
+        r = params["r"]; xc = params.get("xc", 0.0); yc = params.get("yc", 0.0)
+        return (
+            rf"{fmt(xc,2)}+{fmt(r,2)}\cos t",
+            rf"{fmt(yc,2)}+{fmt(r,2)}\sin t",
+        )
+    if name.startswith("Parábola"):
+        return ("t", rf"{fmt(params.get('a',1.0),2)}t^2")
+    if name.startswith("Exponencial"):
+        return (r"e^t", "t")
+    if name.startswith("Senoide"):
+        return ("t", r"\sin t")
+    if name.startswith("Catenária"):
+        a0 = params["a"]
+        return ("t", rf"{fmt(a0,2)}\cosh\left(t/{fmt(a0,2)}\right)")
+    if name.startswith("Cúspide"):
+        return (r"t^3", r"t^2")
+    if name.startswith("Auto-interseção"):
+        return (r"\sin t", r"\sin t\cos t")
+    if name.startswith("Não diferenciável: valor absoluto"):
+        return (r"|t|", "t")
+    if name.startswith("Não diferenciável: raiz cúbica"):
+        return (r"t^{1/3}", "t")
+    if name.startswith("Diferenciável, mas não"):
+        return ("t", r"t^2\sin(1/t)")
+    if name == "Personalizada" and custom:
+        return (custom["x"], custom["y"])
+    return ("x(t)", "y(t)")
+
+
+def spatial_component_formulas(name: str, params, custom=None):
+    if name.startswith("Reta espacial"):
+        return tuple(
+            rf"{fmt(params[c0],2)}+{fmt(params[v0],2)}t"
+            for c0, v0 in (("x0","vx"),("y0","vy"),("z0","vz"))
+        )
+    if name.startswith("Hélice"):
+        return (
+            rf"{fmt(params['a'],2)}\cos t",
+            rf"{fmt(params['a'],2)}\sin t",
+            rf"{fmt(params['b'],2)}t",
+        )
+    if name == "Parábola espacial":
+        return ("t", r"t^2", rf"{fmt(params['c'],2)}t")
+    if name == "Cúbica torcida":
+        return ("t", r"t^2", r"t^3")
+    if name == "Curva toroidal":
+        return (
+            r"(R+r\cos(nt))\cos(mt)",
+            r"(R+r\cos(nt))\sin(mt)",
+            r"r\sin(nt)",
+        )
+    if name == "Curva de Viviani":
+        A = params["a"]
+        return (
+            rf"{fmt(A,2)}(1+\cos t)",
+            rf"{fmt(A,2)}\sin t",
+            rf"{fmt(2*A,2)}\sin(t/2)",
+        )
+    if name == "Personalizada" and custom:
+        return (custom["x"], custom["y"], custom["z"])
+    return ("x(t)", "y(t)", "z(t)")
+
+
+def _irregular_values(parameter: np.ndarray, speed: np.ndarray, name: str):
+    if "Cúspide singular" in name:
+        return [0.0] if parameter[0] <= 0.0 <= parameter[-1] else []
+    indices = np.where(np.asarray(speed) < 1e-5)[0]
+    if len(indices) == 0:
+        return []
+    values = []
+    for idx in indices:
+        value = float(parameter[idx])
+        if not values or abs(value - values[-1]) > max(1e-3, 3 * abs(parameter[1]-parameter[0])):
+            values.append(value)
+    return values[:6]
+
+
+def _known_simple_status(name: str, parameter: np.ndarray, params=None):
+    if name.startswith("Auto-interseção"):
+        return False, "não é simples, pois apresenta auto-interseção"
+    if name.startswith("Circunferência"):
+        span = float(parameter[-1] - parameter[0])
+        if span >= 2*np.pi - 1e-5:
+            return False, "não é simples no intervalo fechado escolhido, pois os extremos representam o mesmo ponto"
+        return True, "é simples no intervalo escolhido"
+    if name.startswith("Reta espacial") and params is not None:
+        direction = np.array([params.get("vx",0.0), params.get("vy",0.0), params.get("vz",0.0)])
+        if np.linalg.norm(direction) < EPS:
+            return False, "não é simples, pois é uma curva constante"
+        return True, "é simples no intervalo escolhido"
+    if name.startswith(("Reta", "Parábola", "Exponencial", "Senoide", "Catenária", "Cúspide")):
+        return True, "é simples no intervalo escolhido"
+    if name.startswith("Hélice"):
+        b = float((params or {}).get("b", 0.0))
+        span = float(parameter[-1] - parameter[0])
+        if abs(b) > 1e-8:
+            return True, "é simples no intervalo escolhido"
+        if span >= 2*np.pi - 1e-5:
+            return False, "não é simples no intervalo fechado escolhido"
+    return None, "a simplicidade é verificada numericamente"
+
+
+def _numerical_simple(alpha: np.ndarray):
+    points = np.asarray(alpha, float)
+    if len(points) > 450:
+        ids = np.linspace(0, len(points)-1, 450).astype(int)
+        points = points[ids]
+    if len(points) < 4:
+        return True
+    scale = max(float(np.ptp(points, axis=0).max()), 1.0)
+    tol = 2e-4 * scale
+    for i in range(len(points)):
+        distances = np.linalg.norm(points[i+1:] - points[i], axis=1)
+        for j0, distance in enumerate(distances, start=i+1):
+            if abs(j0-i) <= 3:
+                continue
+            if distance < tol:
+                return False
+    return True
+
+
+def _arc_length_and_reparametrizations(parameter, speed, components, dimension):
+    parameter = np.asarray(parameter, float)
+    speed = np.asarray(speed, float)
+    tmin, tmax = float(parameter[0]), float(parameter[-1])
+    unit_speed = bool(np.all(np.isfinite(speed)) and np.allclose(speed, 1.0, atol=2e-2, rtol=2e-2))
+    if unit_speed:
+        st.info(
+            "A curva está parametrizada pelo comprimento de arco no intervalo escolhido, "
+            "pois a plataforma verifica numericamente que $\\|\\alpha'(t)\\|=1$."
+        )
+        st.latex(
+            rf"\alpha:[{fmt(tmin,2)},{fmt(tmax,2)}]\longrightarrow\mathbb R^{dimension},"
+            rf"\qquad \|\alpha'(t)\|=1"
+        )
+        return
+
+    st.info(
+        "A curva não está parametrizada pelo comprimento de arco no intervalo escolhido, "
+        "pois $\\|\\alpha'(t)\\|$ não é identicamente igual a $1$."
+    )
+    span = tmax - tmin
+    def substitute_parameter(component, replacement):
+        return re.sub(r"(?<![A-Za-z])t(?![A-Za-z])", lambda _: replacement, component)
+    plus_components = tuple(substitute_parameter(comp, r"\phi_{+}(u)") for comp in components)
+    minus_components = tuple(substitute_parameter(comp, r"\phi_{-}(u)") for comp in components)
+    st.markdown("**Reparametrização que preserva a orientação:**")
+    st.latex(
+        rf"\phi_+:[0,1]\longrightarrow[{fmt(tmin,2)},{fmt(tmax,2)}],"
+        rf"\qquad \phi_+(u)={fmt(tmin,2)}+{fmt(span,2)}u,\qquad \phi_+'(u)={fmt(span,2)}>0"
+    )
+    st.latex(
+        rf"\beta_+:[0,1]\longrightarrow\mathbb R^{dimension},\qquad"
+        rf"\beta_+(u)=\alpha(\phi_+(u))="
+        + r"\left(" + r",\;".join(plus_components) + r"\right)"
+    )
+    st.markdown("**Reparametrização que inverte a orientação:**")
+    st.latex(
+        rf"\phi_-:[0,1]\longrightarrow[{fmt(tmin,2)},{fmt(tmax,2)}],"
+        rf"\qquad \phi_-(u)={fmt(tmax,2)}-{fmt(span,2)}u,\qquad \phi_-'(u)=-{fmt(span,2)}<0"
+    )
+    st.latex(
+        rf"\beta_-:[0,1]\longrightarrow\mathbb R^{dimension},\qquad"
+        rf"\beta_-(u)=\alpha(\phi_-(u))="
+        + r"\left(" + r",\;".join(minus_components) + r"\right)"
+    )
+
+
+def _blue_analysis_summary(name, parameter, alpha, speed, kappa_value, torsion_value=None, params=None):
+    nondiff = name.startswith("Não diferenciável") or name.startswith("Diferenciável, mas não")
+    irregular = _irregular_values(parameter, speed, name)
+    if nondiff:
+        regular_text = "A aplicação escolhida não é uma curva parametrizada diferenciável em todo o domínio."
+    elif irregular:
+        vals = ", ".join(fmt(v,2) for v in irregular)
+        regular_text = f"A curva não é regular. Valor(es) de irregularidade detectado(s): t={vals}."
+    else:
+        regular_text = "A curva é regular em todo o intervalo selecionado."
+
+    simple_known, simple_reason = _known_simple_status(name, parameter, params)
+    if simple_known is None:
+        simple_known = _numerical_simple(alpha)
+        simple_reason = "é simples segundo a verificação numérica" if simple_known else "não é simples segundo a verificação numérica"
+    simple_text = "A curva " + simple_reason + "."
+
+    if np.isfinite(kappa_value):
+        curvature_text = f"Curvatura no ponto selecionado: κ(t₀)={fmt(kappa_value,2)}."
+    else:
+        curvature_text = "A curvatura não está definida no ponto selecionado."
+
+    torsion_text = ""
+    if torsion_value is not None:
+        torsion_text = (
+            f" Torção no ponto selecionado: τ(t₀)={fmt(torsion_value,2)}."
+            if np.isfinite(torsion_value)
+            else " A torção não está definida no ponto selecionado."
+        )
+    st.info(regular_text + "\n\n" + simple_text + "\n\n" + curvature_text + torsion_text)
+
+
+def render_rigid_math_2d(meta, alpha_latex: str, tmin: float, tmax: float, components=None):
+    M, a = meta["Q"], meta["a"]
+    detM = float(meta["det"])
+    kind = "próprio" if detM > 0 else "impróprio"
+    components = components or ("x(t)", "y(t)")
+    transformed = (
+        _linear_combination_latex(M[0], components, a[0]),
+        _linear_combination_latex(M[1], components, a[1]),
+    )
     st.markdown("### Formulação matemática do movimento rígido")
-    st.latex(r"F:\mathbb R^2\longrightarrow\mathbb R^2,\qquad F(p)=Mp+a,\qquad M^TM=I")
-    st.latex(rf"M={matrix_latex(Q)},\qquad a={vector_latex(a,4)},\qquad \det M={fmt(meta['det'],2)}")
+    st.latex(r"F:\mathbb R^2\longrightarrow\mathbb R^2,\qquad F(p)=M(p)+a,\qquad a=(a_1,a_2),\qquad M^TM=I")
+    st.markdown(
+        f"A aplicação $F$ é uma **isometria** de $\\mathbb R^2$. "
+        f"A matriz $M$ representa a parte ortogonal do movimento rígido **{kind}**, "
+        f"pois $\\det M={fmt(detM,2)}$."
+    )
+    st.latex(rf"M={matrix_latex(M)},\qquad a={vector_latex(a,2)},\qquad \det M={fmt(detM,2)}")
     typ = meta["type"]
     if typ == "Rotação":
         c = meta["center"]
-        st.latex(rf"c={vector_latex(c,4)},\qquad \theta={fmt(meta['angle'],2)}^\circ")
-        st.latex(r"F(p)=c+R_\theta(p-c)")
+        st.latex(rf"c={vector_latex(c,2)},\qquad \theta={fmt(meta['angle'],2)}^\circ,\qquad F(p)=c+R_\theta(p-c)")
     elif typ in {"Reflexão em uma reta", "Reflexão deslizante"}:
         c, u = meta["center"], meta["direction"]
-        st.latex(rf"L=\{{c+\lambda u:\lambda\in\mathbb R\}},\quad c={vector_latex(c,4)},\quad u={vector_latex(u,4)}")
+        st.latex(rf"L=\{{c+\lambda u:\lambda\in\mathbb R\}},\quad c={vector_latex(c,2)},\quad u={vector_latex(u,2)}")
         if typ == "Reflexão deslizante":
-            st.latex(rf"F(p)=c+M(p-c)+h u,\qquad h={fmt(meta['slide'],3)}")
+            st.latex(rf"F(p)=c+M(p-c)+hu,\qquad h={fmt(meta['slide'],2)}")
         else:
             st.latex(r"F(p)=c+M(p-c)")
     elif typ == "Translação":
         st.latex(r"F(p)=p+a")
     else:
         st.latex(r"F(p)=p")
-    st.markdown(r"A curva transformada é a composição $\widetilde\alpha=F\circ\alpha$:")
-    st.latex(rf"\alpha:[{fmt(tmin,3)},{fmt(tmax,3)}]\to\mathbb R^2,\qquad {alpha_latex}")
-    st.latex(r"\widetilde\alpha:[t_{\min},t_{\max}]\to\mathbb R^2,\qquad \widetilde\alpha(t)=M\alpha(t)+a")
+    st.markdown(r"A curva transformada é a composição $\widetilde{\alpha}=F\circ\alpha$.")
+    st.latex(rf"\alpha:[{fmt(tmin,2)},{fmt(tmax,2)}]\longrightarrow\mathbb R^2,\qquad {alpha_latex}")
     st.latex(
-        rf"\widetilde\alpha(t)=\left({fmt(Q[0,0],4)}x(t)+{fmt(Q[0,1],4)}y(t)+{fmt(a[0],4)},\;"
-        rf"{fmt(Q[1,0],4)}x(t)+{fmt(Q[1,1],4)}y(t)+{fmt(a[1],4)}\right)"
+        rf"\widetilde\alpha:[{fmt(tmin,2)},{fmt(tmax,2)}]\longrightarrow\mathbb R^2,"
+        rf"\qquad \widetilde\alpha(t)=\left({transformed[0]},\;{transformed[1]}\right)"
     )
 
 
-def render_rigid_math_3d(meta, alpha_latex: str, tmin: float, tmax: float):
-    Q, a = meta["Q"], meta["a"]
+def render_rigid_math_3d(meta, alpha_latex: str, tmin: float, tmax: float, components=None):
+    M, a = meta["Q"], meta["a"]
+    detM = float(meta["det"])
+    kind = "próprio" if detM > 0 else "impróprio"
+    components = components or ("x(t)", "y(t)", "z(t)")
+    transformed = tuple(_linear_combination_latex(M[row], components, a[row]) for row in range(3))
     st.markdown("### Formulação matemática do movimento rígido")
-    st.latex(r"F:\mathbb R^3\longrightarrow\mathbb R^3,\qquad F(p)=Mp+a,\qquad M^TM=I")
-    st.latex(rf"M={matrix_latex(Q)},\qquad a={vector_latex(a,4)},\qquad \det M={fmt(meta['det'],2)}")
+    st.latex(r"F:\mathbb R^3\longrightarrow\mathbb R^3,\qquad F(p)=M(p)+a,\qquad a=(a_1,a_2,a_3),\qquad M^TM=I")
+    st.markdown(
+        f"A aplicação $F$ é uma **isometria** de $\\mathbb R^3$. "
+        f"A matriz $M$ representa a parte ortogonal do movimento rígido **{kind}**, "
+        f"pois $\\det M={fmt(detM,2)}$."
+    )
+    st.latex(rf"M={matrix_latex(M)},\qquad a={vector_latex(a,2)},\qquad \det M={fmt(detM,2)}")
     typ = meta["type"]
     if typ in {"Rotação em torno de uma reta", "Movimento helicoidal", "Rotoreflexão"}:
         c, u = meta["point"], meta["axis"]
-        st.latex(rf"L=\{{c+\lambda u:\lambda\in\mathbb R\}},\quad c={vector_latex(c,4)},\quad u={vector_latex(u,4)}")
+        st.latex(rf"L=\{{c+\lambda u:\lambda\in\mathbb R\}},\quad c={vector_latex(c,2)},\quad u={vector_latex(u,2)}")
         st.latex(rf"\theta={fmt(meta['angle'],2)}^\circ")
         if typ == "Movimento helicoidal":
-            st.latex(rf"F(p)=c+R_\theta(p-c)+hu,\qquad h={fmt(meta['slide'],3)}")
+            st.latex(rf"F(p)=c+R_\theta(p-c)+hu,\qquad h={fmt(meta['slide'],2)}")
         elif typ == "Rotoreflexão":
             st.latex(r"F(p)=c+H_uR_\theta(p-c),\qquad H_u=I-2uu^T")
         else:
             st.latex(r"F(p)=c+R_\theta(p-c)")
     elif typ == "Reflexão em um plano":
         c, n = meta["point"], meta["axis"]
-        st.latex(rf"\Pi=\{{p\in\mathbb R^3:\langle p-c,n\rangle=0\}},\quad c={vector_latex(c,4)},\quad n={vector_latex(n,4)}")
+        st.latex(rf"\Pi=\{{p\in\mathbb R^3:\langle p-c,n\rangle=0\}},\quad c={vector_latex(c,2)},\quad n={vector_latex(n,2)}")
         st.latex(r"F(p)=c+(I-2nn^T)(p-c)")
     elif typ == "Translação":
         st.latex(r"F(p)=p+a")
     else:
         st.latex(r"F(p)=p")
-    st.latex(rf"\alpha:[{fmt(tmin,3)},{fmt(tmax,3)}]\to\mathbb R^3,\qquad {alpha_latex}")
-    st.latex(r"\widetilde\alpha(t)=F(\alpha(t))=M\alpha(t)+a")
+    st.markdown(r"A curva transformada é a composição $\widetilde{\alpha}=F\circ\alpha$.")
+    st.latex(rf"\alpha:[{fmt(tmin,2)},{fmt(tmax,2)}]\longrightarrow\mathbb R^3,\qquad {alpha_latex}")
     st.latex(
-        rf"\widetilde\alpha(t)=\left("
-        rf"{fmt(Q[0,0],3)}x+{fmt(Q[0,1],3)}y+{fmt(Q[0,2],3)}z+{fmt(a[0],3)},\;"
-        rf"{fmt(Q[1,0],3)}x+{fmt(Q[1,1],3)}y+{fmt(Q[1,2],3)}z+{fmt(a[1],3)},\;"
-        rf"{fmt(Q[2,0],3)}x+{fmt(Q[2,1],3)}y+{fmt(Q[2,2],3)}z+{fmt(a[2],3)}\right)_{{(x,y,z)=\alpha(t)}}"
+        rf"\widetilde\alpha:[{fmt(tmin,2)},{fmt(tmax,2)}]\longrightarrow\mathbb R^3,"
+        rf"\qquad \widetilde\alpha(t)=\left({transformed[0]},\;{transformed[1]},\;{transformed[2]}\right)"
     )
+
 
 
 def render_planar_analysis():
@@ -708,70 +962,136 @@ def render_planar_analysis():
         st.subheader("Curva plana")
         name=st.selectbox("Exemplo",names,key="pa2_name")
         params={};custom=None
-        if "Circunferência" in name: params["r"]=st.slider("r",.2,5.,1.,.1,key="pa2_r");params["xc"]=0.;params["yc"]=0.
-        elif "Parábola" in name: params["a"]=st.slider("a",.2,3.,1.,.1,key="pa2_a")
-        elif "Catenária" in name: params["a"]=st.slider("a",.2,3.,1.,.1,key="pa2_cat")
-        elif name=="Personalizada": custom={"x":st.text_input("x(t)","cos(t)",key="pa2_x"),"y":st.text_input("y(t)","sin(t)",key="pa2_y")}
+        if "Circunferência" in name:
+            params["r"]=st.slider("r",.2,5.,1.,.1,key="pa2_r"); params["xc"]=0.; params["yc"]=0.
+        elif "Parábola" in name:
+            params["a"]=st.slider("a",.2,3.,1.,.1,key="pa2_a")
+        elif "Catenária" in name:
+            params["a"]=st.slider("a",.2,3.,1.,.1,key="pa2_cat")
+        elif name=="Personalizada":
+            custom={"x":st.text_input("x(t)","cos(t)",key="pa2_x"),"y":st.text_input("y(t)","sin(t)",key="pa2_y")}
         default=(0.,2*np.pi) if ("Circunferência" in name or "Auto" in name) else (-3.,3.)
         tmin=st.number_input("t mínimo",value=float(default[0]),key=f"pa2_tmin_{name}")
         tmax=st.number_input("t máximo",value=float(default[1]),key=f"pa2_tmax_{name}")
         n=st.slider("Resolução",300,1600,800,100,key="pa2_n")
         t0=st.slider("Ponto t₀",float(tmin),float(tmax),float((tmin+tmax)/2),key=f"pa2_t0_{name}") if tmax>tmin else tmin
         scale=st.slider("Escala dos vetores",.1,3.,1.,.1,key="pa2_scale")
-    if tmax<=tmin: st.error("É necessário ter t mínimo < t máximo."); return
+    if tmax<=tmin:
+        st.error("É necessário ter t mínimo < t máximo.")
+        return
     t=np.linspace(tmin,tmax,n)
-    try: data=planar_curve(t,name,params,custom)
-    except Exception as exc: st.error(f"Não foi possível construir a curva: {exc}"); return
-    i=nearest_index(t,t0); p=data.alpha[i]; v=data.alpha1[i]; T=safe_unit(v); N=np.array([-T[1],T[0]]) if T is not None else None
-    kaparr=planar_curvature(data.alpha1,data.alpha2); kap=kaparr[i] if np.isfinite(kaparr[i]) else np.nan; radius=center=None
-    if N is not None and np.isfinite(kap) and abs(kap)>1e-8: radius=1/abs(kap); center=p+N/kap
-    Q,a,meta=rigid_controls_2d_full("pa2"); det=meta["det"]
-    alphaF=transform_points(data.alpha,Q,a); pF=Q@p+a; vF=Q@v; TF=Q@T if T is not None else None; NF=det*(Q@N) if N is not None else None; centerF=Q@center+a if center is not None else None
-    st.latex(rf"\alpha:[{fmt(tmin,3)},{fmt(tmax,3)}]\longrightarrow\mathbb R^2,\qquad {data.latex}")
-    st.info(data.note)
+    try:
+        data=planar_curve(t,name,params,custom)
+    except Exception as exc:
+        st.error(f"Não foi possível construir a curva: {exc}")
+        return
+    i=nearest_index(t,t0)
+    p=data.alpha[i]; v=data.alpha1[i]; T=safe_unit(v)
+    N=np.array([-T[1],T[0]]) if T is not None else None
+    speed=np.linalg.norm(data.alpha1,axis=1)
+    kaparr=planar_curvature(data.alpha1,data.alpha2)
+    kap=kaparr[i] if np.isfinite(kaparr[i]) else np.nan
+    radius=center=None
+    if N is not None and np.isfinite(kap) and abs(kap)>1e-8:
+        radius=1/abs(kap); center=p+N/kap
+    M,a,meta=rigid_controls_2d_full("pa2"); det=meta["det"]
+    alphaF=transform_points(data.alpha,M,a); pF=M@p+a; vF=M@v
+    TF=M@T if T is not None else None
+    NF=det*(M@N) if N is not None else None
+    centerF=M@center+a if center is not None else None
+    components=planar_component_formulas(name,params,custom)
+
+    st.latex(rf"\alpha:[{fmt(tmin,2)},{fmt(tmax,2)}]\longrightarrow\mathbb R^2,\qquad {data.latex}")
+    _blue_analysis_summary(name,t,data.alpha,speed,kap,params=params)
+    _arc_length_and_reparametrizations(t,speed,components,2)
+
     c1,c2=st.columns(2)
-    with c1: st.plotly_chart(plot2(data.alpha,p,T,N,v,center,radius,(True,True,True,True,True,True),scale,title="Curva original"),use_container_width=True)
-    with c2: st.plotly_chart(plot2(alphaF,pF,TF,NF,vF,centerF,radius,(True,True,True,True,True,True),scale,title="Curva após o movimento rígido"),use_container_width=True)
-    render_rigid_math_2d(meta,data.latex,tmin,tmax)
+    with c1:
+        st.plotly_chart(plot2(data.alpha,p,T,N,v,center,radius,(True,True,True,True,True,True),scale,title="Curva original"),use_container_width=True)
+    with c2:
+        st.plotly_chart(plot2(alphaF,pF,TF,NF,vF,centerF,radius,(True,True,True,True,True,True),scale,title="Curva após o movimento rígido"),use_container_width=True)
+
+    render_rigid_math_2d(meta,data.latex,tmin,tmax,components)
     st.markdown("### Valores no ponto selecionado")
     c1,c2=st.columns(2)
     with c1:
-        st.latex(rf"t_0={fmt(t[i])},\quad \alpha(t_0)={vector_latex(p)}")
-        st.latex(rf"T(t_0)={vector_latex(T) if T is not None else r'\text{não definido}'},\quad \kappa(t_0)={latex_scalar(kap)}")
+        st.latex(rf"t_0={fmt(t[i],2)},\quad \alpha(t_0)={vector_latex(p,2)}")
+        st.latex(rf"\mathfrak{{t}}(t_0)={vector_latex(T,2) if T is not None else r'\text{não definido}'},\quad \kappa(t_0)={latex_scalar(kap,2)}")
     with c2:
-        st.latex(rf"\widetilde\alpha(t_0)={vector_latex(pF)}")
-        st.latex(rf"\widetilde T(t_0)={vector_latex(TF) if TF is not None else r'\text{não definido}'}")
+        st.latex(rf"\widetilde\alpha(t_0)={vector_latex(pF,2)}")
+        st.latex(rf"\widetilde{{\mathfrak{{t}}}}(t_0)={vector_latex(TF,2) if TF is not None else r'\text{não definido}'}")
+
+
 
 
 def render_spatial_analysis():
     st.header(r"Análise de curvas espaciais em $\mathbb R^3$")
     names=["Reta espacial (Ex. 2.1.3)","Hélice circular (Ex. 2.1.4 e 2.2.3)","Parábola espacial","Cúbica torcida","Curva toroidal","Curva de Viviani","Personalizada"]
     with st.sidebar:
-        st.subheader("Curva espacial"); name=st.selectbox("Exemplo",names,key="sa2_name"); params={};custom=None
+        st.subheader("Curva espacial")
+        name=st.selectbox("Exemplo",names,key="sa2_name"); params={};custom=None
         if "Reta" in name:
-            for k,val in zip(["x0","y0","z0","vx","vy","vz"],[0.,0.,0.,1.,1.,1.]): params[k]=st.number_input(k,value=val,key=f"sa2_{k}")
-        elif "Hélice" in name: params["a"]=st.slider("a",.2,4.,1.,.1,key="sa2_a");params["b"]=st.slider("b",-2.,2.,.4,.1,key="sa2_b")
-        elif name=="Parábola espacial": params["c"]=st.slider("c",-3.,3.,1.,.1,key="sa2_c")
-        elif name=="Curva toroidal": params.update(R=2.5,r=.8,m=2.,n=3.)
-        elif name=="Curva de Viviani": params["a"]=1.
-        elif name=="Personalizada": custom={"x":st.text_input("x(t)","cos(t)",key="sa2_x"),"y":st.text_input("y(t)","sin(t)",key="sa2_y"),"z":st.text_input("z(t)","0.3*t",key="sa2_z")}
+            for k,val in zip(["x0","y0","z0","vx","vy","vz"],[0.,0.,0.,1.,1.,1.]):
+                params[k]=st.number_input(k,value=val,key=f"sa2_{k}")
+        elif "Hélice" in name:
+            params["a"]=st.slider("a",.2,4.,1.,.1,key="sa2_a")
+            params["b"]=st.slider("b",-2.,2.,.4,.1,key="sa2_b")
+        elif name=="Parábola espacial":
+            params["c"]=st.slider("c",-3.,3.,1.,.1,key="sa2_c")
+        elif name=="Curva toroidal":
+            params.update(R=2.5,r=.8,m=2.,n=3.)
+        elif name=="Curva de Viviani":
+            params["a"]=1.
+        elif name=="Personalizada":
+            custom={"x":st.text_input("x(t)","cos(t)",key="sa2_x"),"y":st.text_input("y(t)","sin(t)",key="sa2_y"),"z":st.text_input("z(t)","0.3*t",key="sa2_z")}
         default=(-2*np.pi,2*np.pi) if "Hélice" in name else (-3.,3.)
-        tmin=st.number_input("t mínimo",value=float(default[0]),key=f"sa2_tmin_{name}");tmax=st.number_input("t máximo",value=float(default[1]),key=f"sa2_tmax_{name}");n=st.slider("Resolução",300,1600,800,100,key="sa2_n")
-        t0=st.slider("Ponto t₀",float(tmin),float(tmax),float((tmin+tmax)/2),key=f"sa2_t0_{name}") if tmax>tmin else tmin;scale=st.slider("Escala do triedro",.1,3.,1.,.1,key="sa2_scale")
-    if tmax<=tmin: st.error("É necessário ter t mínimo < t máximo."); return
+        tmin=st.number_input("t mínimo",value=float(default[0]),key=f"sa2_tmin_{name}")
+        tmax=st.number_input("t máximo",value=float(default[1]),key=f"sa2_tmax_{name}")
+        n=st.slider("Resolução",300,1600,800,100,key="sa2_n")
+        t0=st.slider("Ponto t₀",float(tmin),float(tmax),float((tmin+tmax)/2),key=f"sa2_t0_{name}") if tmax>tmin else tmin
+        scale=st.slider("Escala do triedro",.1,3.,1.,.1,key="sa2_scale")
+    if tmax<=tmin:
+        st.error("É necessário ter t mínimo < t máximo.")
+        return
     t=np.linspace(tmin,tmax,n)
-    try: data=spatial_curve(t,name,params,custom)
-    except Exception as exc: st.error(f"Não foi possível construir a curva: {exc}"); return
-    i=nearest_index(t,t0); p=data.alpha[i]; v1=data.alpha1[i];v2=data.alpha2[i];T=safe_unit(v1);B=safe_unit(np.cross(v1,v2));N=safe_unit(np.cross(B,T)) if B is not None and T is not None else None
-    kap=spatial_curvature(data.alpha1,data.alpha2)[i];tau=spatial_torsion(data.alpha1,data.alpha2,data.alpha3)[i]
-    Q,a,meta=rigid_controls_3d_full("sa2");det=meta["det"];alphaF=transform_points(data.alpha,Q,a);pF=Q@p+a;TF=Q@T if T is not None else None;NF=det*(Q@N) if N is not None else None;BF=det*(Q@B) if B is not None else None
-    st.latex(rf"\alpha:[{fmt(tmin,3)},{fmt(tmax,3)}]\longrightarrow\mathbb R^3,\qquad {data.latex}")
-    st.info(data.note)
+    try:
+        data=spatial_curve(t,name,params,custom)
+    except Exception as exc:
+        st.error(f"Não foi possível construir a curva: {exc}")
+        return
+    i=nearest_index(t,t0)
+    p=data.alpha[i]; v1=data.alpha1[i]; v2=data.alpha2[i]
+    T=safe_unit(v1); B=safe_unit(np.cross(v1,v2))
+    N=safe_unit(np.cross(B,T)) if B is not None and T is not None else None
+    speed=np.linalg.norm(data.alpha1,axis=1)
+    karr=spatial_curvature(data.alpha1,data.alpha2)
+    tarr=spatial_torsion(data.alpha1,data.alpha2,data.alpha3)
+    kap=karr[i]; tau=tarr[i]
+    M,a,meta=rigid_controls_3d_full("sa2"); det=meta["det"]
+    alphaF=transform_points(data.alpha,M,a); pF=M@p+a
+    TF=M@T if T is not None else None
+    NF=det*(M@N) if N is not None else None
+    BF=det*(M@B) if B is not None else None
+    components=spatial_component_formulas(name,params,custom)
+
+    st.latex(rf"\alpha:[{fmt(tmin,2)},{fmt(tmax,2)}]\longrightarrow\mathbb R^3,\qquad {data.latex}")
+    _blue_analysis_summary(name,t,data.alpha,speed,kap,tau,params)
+    _arc_length_and_reparametrizations(t,speed,components,3)
+
     c1,c2=st.columns(2)
-    with c1: st.plotly_chart(plot3(data.alpha,p,T,N,B,scale,title="Curva original"),use_container_width=True)
-    with c2: st.plotly_chart(plot3(alphaF,pF,TF,NF,BF,scale,title="Curva após o movimento rígido"),use_container_width=True)
-    render_rigid_math_3d(meta,data.latex,tmin,tmax)
-    st.latex(rf"\kappa(t_0)={latex_scalar(kap)},\qquad \widetilde\tau(t_0)={latex_scalar(det*tau if np.isfinite(tau) else tau)}")
+    with c1:
+        st.plotly_chart(plot3(data.alpha,p,T,N,B,scale,title="Curva original"),use_container_width=True)
+    with c2:
+        st.plotly_chart(plot3(alphaF,pF,TF,NF,BF,scale,title="Curva após o movimento rígido"),use_container_width=True)
+
+    render_rigid_math_3d(meta,data.latex,tmin,tmax,components)
+    st.markdown("### Valores no ponto selecionado")
+    st.latex(rf"t_0={fmt(t[i],2)},\qquad \alpha(t_0)={vector_latex(p,2)}")
+    st.latex(rf"\kappa(t_0)={latex_scalar(kap,2)},\qquad \tau(t_0)={latex_scalar(tau,2)}")
+    if T is None:
+        st.error("A curva não é regular no ponto selecionado.")
+    elif B is None:
+        st.warning(r"O triedro de Frenet não está definido porque $\alpha\'(t_0)\times\alpha\'\'(t_0)=0$.")
 
 
 def _affine_phi_controls(key: str, I, default_orientation="Preservar"):
@@ -791,11 +1111,11 @@ def _reparam_display(alpha_fun, I, phi_fun, J, alpha_formula, phi_formula, dim, 
     if np.any(phivals<I[0]-1e-7) or np.any(phivals>I[1]+1e-7):
         st.error("A função φ não envia todo o domínio J para o intervalo I escolhido."); return
     A=alpha_fun(pg); B=alpha_fun(phivals); u0=J[0]+progress*(J[1]-J[0]);t0=float(phi_fun(np.array([u0]))[0]);pa=alpha_fun(np.array([t0]))[0];pb=alpha_fun(np.array([t0]))[0]
-    st.latex(rf"\alpha:I=[{fmt(I[0],3)},{fmt(I[1],3)}]\to\mathbb R^{dim},\qquad {alpha_formula}")
-    st.latex(rf"\phi:J=[{fmt(J[0],3)},{fmt(J[1],3)}]\to I,\qquad {phi_formula}")
+    st.latex(rf"\alpha:I=[{fmt(I[0], 2)},{fmt(I[1], 2)}]\to\mathbb R^{dim},\qquad {alpha_formula}")
+    st.latex(rf"\phi:J=[{fmt(J[0], 2)},{fmt(J[1], 2)}]\to I,\qquad {phi_formula}")
     st.latex(rf"\beta:J\to\mathbb R^{dim},\qquad \beta({new_parameter})=\alpha(\phi({new_parameter}))")
     dphi=np.gradient(phivals,ug,edge_order=2); d0=float(dphi[nearest_index(ug,u0)])
-    st.latex(rf"\phi'({new_parameter}_0)={fmt(d0,5)}")
+    st.latex(rf"\phi'({new_parameter}_0)={fmt(d0, 2)}")
     if np.all(dphi>0): st.success("φ é estritamente crescente; a reparametrização preserva a orientação.")
     elif np.all(dphi<0): st.error("φ é estritamente decrescente; a reparametrização inverte a orientação.")
     else: st.warning("φ' muda de sinal ou se anula; esta escolha não define uma mudança de parâmetro difeomorfa em todo J.")
@@ -831,7 +1151,7 @@ def render_planar_reparam():
         try:J,m,b=_affine_phi_controls("rp2_th",I)
         except ValueError as exc:st.error(str(exc));return
         phi=lambda u:m*u+b
-        _reparam_display(alpha_s,I,phi,J,rf"\alpha'(s)=T(s),\ {kf}",rf"\phi(u)={fmt(m,4)}u+{fmt(b,4)}",2,progress,original_parameter="s",new_parameter="u");return
+        _reparam_display(alpha_s,I,phi,J,rf"\alpha'(s)=T(s),\ {kf}",rf"\phi(u)={fmt(m, 2)}u+{fmt(b, 2)}",2,progress,original_parameter="s",new_parameter="u");return
     with st.sidebar:
         xexpr=st.text_input("x(t)","cos(t)",key="rp2_cx");yexpr=st.text_input("y(t)","sin(t)",key="rp2_cy");imin=st.number_input("t mínimo",value=0.,key="rp2_imin");imax=st.number_input("t máximo",value=float(2*np.pi),key="rp2_imax");jmin=st.number_input("u mínimo",value=0.,key="rp2_jmin");jmax=st.number_input("u máximo",value=1.,key="rp2_jmax");phiexpr=st.text_input("φ(u)","2*pi*u",key="rp2_phi")
     if imax<=imin or jmax<=jmin:st.error("Os intervalos devem ser válidos.");return
@@ -849,10 +1169,10 @@ def render_spatial_reparam():
     if ex.startswith("Hélice"):
         I=(-np.pi,np.pi);alpha=lambda t:np.column_stack((A0*np.cos(t),A0*np.sin(t),b0*t))
         if "comprimento" in ex:
-            v=np.sqrt(A0*A0+b0*b0);J=(-np.pi*v,np.pi*v);phi=lambda s:s/v;pf=rf"\phi(s)=\dfrac{{s}}{{\sqrt{{{A0:.3g}^2+{b0:.3g}^2}}}}";new="s"
+            v=np.sqrt(A0*A0+b0*b0);J=(-np.pi*v,np.pi*v);phi=lambda s:s/v;pf=rf"\phi(s)=\dfrac{{s}}{{\sqrt{{{A0:.2f}^2+{b0:.2f}^2}}}}";new="s"
         elif "preservada" in ex:J=(-np.pi/2,np.pi/2);phi=lambda u:2*u;pf=r"\phi(u)=2u";new="u"
         else:J=(-np.pi,np.pi);phi=lambda u:-u;pf=r"\phi(u)=-u";new="u"
-        _reparam_display(alpha,I,phi,J,rf"\alpha(t)=({A0:.3g}\cos t,{A0:.3g}\sin t,{b0:.3g}t)",pf,3,progress,new_parameter=new)
+        _reparam_display(alpha,I,phi,J,rf"\alpha(t)=({A0:.2f}\cos t,{A0:.2f}\sin t,{b0:.2f}t)",pf,3,progress,new_parameter=new)
         if new=="s":st.latex(r"\|\beta'(s)\|=1")
         return
     if ex.startswith("Curva do Teorema"):
@@ -864,7 +1184,7 @@ def render_spatial_reparam():
         try:J,m,b=_affine_phi_controls("rs2_th",I)
         except ValueError as exc:st.error(str(exc));return
         phi=lambda u:m*u+b
-        _reparam_display(alpha_s,I,phi,J,rf"\alpha'(s)=T(s),\ {af}",rf"\phi(u)={fmt(m,4)}u+{fmt(b,4)}",3,progress,original_parameter="s",new_parameter="u");return
+        _reparam_display(alpha_s,I,phi,J,rf"\alpha'(s)=T(s),\ {af}",rf"\phi(u)={fmt(m, 2)}u+{fmt(b, 2)}",3,progress,original_parameter="s",new_parameter="u");return
     with st.sidebar:
         xexpr=st.text_input("x(t)","cos(t)",key="rs2_cx");yexpr=st.text_input("y(t)","sin(t)",key="rs2_cy");zexpr=st.text_input("z(t)","0.3*t",key="rs2_cz");imin=st.number_input("t mínimo",value=-3.,key="rs2_imin");imax=st.number_input("t máximo",value=3.,key="rs2_imax");jmin=st.number_input("u mínimo",value=-1.,key="rs2_jmin");jmax=st.number_input("u máximo",value=1.,key="rs2_jmax");phiexpr=st.text_input("φ(u)","3*u",key="rs2_phi")
     if imax<=imin or jmax<=jmin:st.error("Os intervalos devem ser válidos.");return
@@ -875,10 +1195,10 @@ def render_spatial_reparam():
 
 def planar_closed_form(name,p,smin,x0,y0,theta0):
     if name=="Nula":
-        return rf"\alpha(s)=({fmt(x0,3)},{fmt(y0,3)})+(s-{fmt(smin,3)})(\cos({fmt(theta0,3)}),\sin({fmt(theta0,3)}))"
+        return rf"\alpha(s)=({fmt(x0, 2)},{fmt(y0, 2)})+(s-{fmt(smin, 2)})(\cos({fmt(theta0, 2)}),\sin({fmt(theta0, 2)}))"
     if name=="Constante" and abs(p.get("c",0.0))>EPS:
         c=p["c"]
-        return rf"\alpha(s)=({fmt(x0,3)},{fmt(y0,3)})+\frac1{{{fmt(c,3)}}}\left(\sin\theta(s)-\sin\theta_0,\;-\cos\theta(s)+\cos\theta_0\right)"
+        return rf"\alpha(s)=({fmt(x0, 2)},{fmt(y0, 2)})+\frac1{{{fmt(c, 2)}}}\left(\sin\theta(s)-\sin\theta_0,\;-\cos\theta(s)+\cos\theta_0\right)"
     return r"\alpha(s)=p_0+\int_{s_{\min}}^s(\cos\theta(u),\sin\theta(u))\,du"
 
 
@@ -895,12 +1215,12 @@ def render_planar_theorem():
     s=np.linspace(smin,smax,n);k=planar_kappa(s,name,p,expr)
     if not np.all(np.isfinite(k)):st.error("κ(s) produziu valores não finitos.");return
     theta0=np.radians(ang);alpha,T,N=reconstruct_planar(s,k,np.array([x0,y0]),theta0);theta=theta0+np.concatenate(([0.],cumulative_trapezoid_local(k,s)));i=nearest_index(s,sm)
-    formula={"Nula":r"\kappa(s)=0","Constante":rf"\kappa(s)={p.get('c',0):.3g}","Linear":rf"\kappa(s)={p.get('a',0):.3g}s","Senoidal":rf"\kappa(s)={p.get('a',0):.3g}\sin({p.get('b',1):.3g}s)","Racional":rf"\kappa(s)=\frac{{{p.get('a',0):.3g}}}{{1+s^2}}","Personalizada":rf"\kappa(s)={expr}"}[name]
+    formula={"Nula":r"\kappa(s)=0","Constante":rf"\kappa(s)={p.get('c',0):.2f}","Linear":rf"\kappa(s)={p.get('a',0):.2f}s","Senoidal":rf"\kappa(s)={p.get('a',0):.2f}\sin({p.get('b',1):.2f}s)","Racional":rf"\kappa(s)=\frac{{{p.get('a',0):.2f}}}{{1+s^2}}","Personalizada":rf"\kappa(s)={expr}"}[name]
     Q,a,meta=rigid_controls_2d_full("pt2");det=meta["det"];alphaF=transform_points(alpha,Q,a);TF=Q@T[i];NF=det*(Q@N[i]);pF=alphaF[i]
     st.markdown("### Dados matemáticos da curva obtida")
-    st.latex(rf"\alpha:[{fmt(smin,3)},{fmt(smax,3)}]\longrightarrow\mathbb R^2")
+    st.latex(rf"\alpha:[{fmt(smin, 2)},{fmt(smax, 2)}]\longrightarrow\mathbb R^2")
     st.latex(formula)
-    st.latex(rf"\alpha({fmt(smin,3)})=({fmt(x0,3)},{fmt(y0,3)}),\qquad \theta({fmt(smin,3)})={fmt(theta0,4)}\ \text{{rad}}={ang}^\circ")
+    st.latex(rf"\alpha({fmt(smin, 2)})=({fmt(x0, 2)},{fmt(y0, 2)}),\qquad \theta({fmt(smin, 2)})={fmt(theta0, 2)}\ \text{{rad}}={ang}^\circ")
     st.latex(r"\theta(s)=\theta_0+\int_{s_{\min}}^s\kappa(u)\,du")
     st.latex(r"T(s)=(\cos\theta(s),\sin\theta(s)),\qquad N(s)=(-\sin\theta(s),\cos\theta(s))")
     st.latex(planar_closed_form(name,p,smin,x0,y0,theta0))
@@ -936,7 +1256,7 @@ def render_spatial_theorem():
     T0,N0,B0=orthonormal_frame(np.array([1.,0.,0.]),np.array([0.,1.,0.]));alpha,T,N,B=solve_frenet(s,k,tau,np.zeros(3),T0,N0,B0);i=nearest_index(s,sm)
     Q,a,meta=rigid_controls_3d_full("st2");det=meta["det"];alphaF=transform_points(alpha,Q,a);TF=Q@T[i];NF=det*(Q@N[i]);BF=det*(Q@B[i])
     st.markdown("### Dados matemáticos da curva obtida")
-    st.latex(rf"\alpha:[{fmt(smin,3)},{fmt(smax,3)}]\to\mathbb R^3,\qquad \|\alpha'(s)\|=1")
+    st.latex(rf"\alpha:[{fmt(smin, 2)},{fmt(smax, 2)}]\to\mathbb R^3,\qquad \|\alpha'(s)\|=1")
     st.latex(rf"\kappa(s_0)={fmt(k[i])},\qquad \tau(s_0)={fmt(tau[i])}")
     c1,c2=st.columns(2)
     with c1:st.plotly_chart(plot3(alpha,alpha[i],T[i],N[i],B[i],scale,title="Curva determinada por κ e τ"),use_container_width=True)
@@ -950,8 +1270,9 @@ def render_spatial_theorem():
 # INTERFACE PRINCIPAL
 # ============================================================
 st.title("Curvas planas e espaciais")
-st.markdown("Módulo interativo baseado no capítulo de curvas: exemplos, regularidade, reparametrização, comprimento de arco, referenciais de Frenet e Teoremas Fundamentais.")
+st.markdown("Módulo interativo baseado no capítulo de curvas: exemplos, regularidade, comprimento de arco, movimentos rígidos, referenciais de Frenet e Teoremas Fundamentais.")
 render_fundamental_concepts()
+
 with st.sidebar:
     st.divider()
     st.header("Ambiente de estudo")
@@ -969,29 +1290,13 @@ with st.sidebar:
         key="mode",
     )
 
-    analysis_topic = None
-    if mode == "Analisar uma curva conhecida":
-        st.markdown("#### Conteúdo da análise")
-        analysis_topic = st.radio(
-            "Escolha o conteúdo",
-            [
-                "Objetos geométricos e movimentos rígidos",
-                "Mudança de parâmetro e comprimento de arco",
-            ],
-            key="analysis_topic",
-        )
-
 if env.startswith("Curvas planas"):
     if mode == "Obter a curva através do Teorema Fundamental":
         render_planar_theorem()
-    elif analysis_topic == "Mudança de parâmetro e comprimento de arco":
-        render_planar_reparam()
     else:
         render_planar_analysis()
 else:
     if mode == "Obter a curva através do Teorema Fundamental":
         render_spatial_theorem()
-    elif analysis_topic == "Mudança de parâmetro e comprimento de arco":
-        render_spatial_reparam()
     else:
         render_spatial_analysis()
