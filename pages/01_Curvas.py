@@ -905,7 +905,7 @@ def render_rigid_math_2d(meta, alpha_latex: str, tmin: float, tmax: float, compo
         st.latex(r"F(p)=p+a")
     else:
         st.latex(r"F(p)=p")
-    st.markdown(r"A curva transformada é a composição $\widetilde{\alpha}=F\circ\alpha$.")
+    st.markdown(r"A curva transformada é a composição $\widetilde{\alpha}(t)=F\circ\alpha$(t).")
     st.latex(rf"\alpha:[{fmt(tmin,2)},{fmt(tmax,2)}]\longrightarrow\mathbb R^2,\qquad {alpha_latex}")
     st.latex(
         rf"\widetilde\alpha:[{fmt(tmin,2)},{fmt(tmax,2)}]\longrightarrow\mathbb R^2,"
