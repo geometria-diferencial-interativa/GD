@@ -235,15 +235,15 @@ def rigid_controls_2d(key: str) -> Tuple[np.ndarray,np.ndarray,str]:
 def rigid_controls_3d(key: str) -> Tuple[np.ndarray,np.ndarray,str]:
     with st.sidebar:
         st.subheader("Movimento rígido em ℝ³")
-        typ=st.selectbox("Tipo",["Identidade","Translação","Rotação em torno de eixo","Reflexão em plano","Movimento helicoidal","Rotoreflexão"],key=f"{key}_rig3_type")
+        typ=st.selectbox("Tipo",["Identidade","Translação","Rotação em torno de eixo","Reflexão em plano","Movimento helicoidal","Rotorreflexão"],key=f"{key}_rig3_type")
         Q=np.eye(3); a=np.zeros(3); desc=r"F(p)=p"
         if typ=="Translação":
             a=np.array([st.number_input("a₁",value=1.,key=f"{key}_tx"),st.number_input("a₂",value=.5,key=f"{key}_ty"),st.number_input("a₃",value=.25,key=f"{key}_tz")]); desc=rf"F(p)=p+{vector_latex(a,2)}"
-        elif typ in {"Rotação em torno de eixo","Movimento helicoidal","Rotoreflexão"}:
+        elif typ in {"Rotação em torno de eixo","Movimento helicoidal","Rotorreflexão"}:
             axis=np.array([st.number_input("Eixo: x",value=0.,key=f"{key}_ax"),st.number_input("Eixo: y",value=0.,key=f"{key}_ay"),st.number_input("Eixo: z",value=1.,key=f"{key}_az")]); deg=st.slider("Ângulo (graus)",-180,180,45,5,key=f"{key}_ang"); Q=rodrigues(axis,np.radians(deg)); u=safe_unit(axis)
             if typ=="Movimento helicoidal":
                 h=st.slider("Translação ao longo do eixo",-5.,5.,1.,.1,key=f"{key}_pitch"); a=h*u; desc=r"F(p)=R_\theta p+h\,u"
-            elif typ=="Rotoreflexão":
+            elif typ=="Rotorreflexão":
                 H=np.eye(3)-2*np.outer(u,u); Q=H@Q; desc=r"F(p)=H\,R_\theta p\quad\text{(rotação e reflexão no plano perpendicular ao eixo)}"
             else: desc=r"F(p)=R_\theta p"
         elif typ=="Reflexão em plano":
@@ -571,19 +571,40 @@ def rigid_controls_3d_full(key: str):
         st.subheader("Movimento rígido em ℝ³")
         typ = st.selectbox(
             "Tipo de movimento rígido",
-            ["Identidade", "Translação", "Rotação em torno de uma reta", "Reflexão em um plano", "Movimento helicoidal", "Rotoreflexão"],
+            [
+                "Identidade",
+                "Translação",
+                "Rotação em torno de uma reta",
+                "Movimento helicoidal",
+                "Reflexão em um plano",
+                "Reflexão deslizante",
+                "Rotorreflexão",
+            ],
             key=f"{key}_full_rig3_type",
         )
         Q = np.eye(3)
         a = np.zeros(3)
-        meta = {"type": typ, "angle": 0.0, "point": np.zeros(3), "axis": np.array([0.0, 0.0, 1.0]), "slide": 0.0}
+        meta = {
+            "type": typ,
+            "angle": 0.0,
+            "point": np.zeros(3),
+            "axis": np.array([0.0, 0.0, 1.0]),
+            "slide": 0.0,
+            "translation_parallel": np.zeros(3),
+        }
+
         if typ == "Translação":
             a = np.array([
                 st.number_input("Translação a₁", value=1.0, key=f"{key}_full_tx"),
                 st.number_input("Translação a₂", value=0.5, key=f"{key}_full_ty"),
                 st.number_input("Translação a₃", value=0.25, key=f"{key}_full_tz"),
             ])
-        elif typ in {"Rotação em torno de uma reta", "Movimento helicoidal", "Rotoreflexão"}:
+
+        elif typ in {
+            "Rotação em torno de uma reta",
+            "Movimento helicoidal",
+            "Rotorreflexão",
+        }:
             c = np.array([
                 st.number_input("Ponto do eixo c₁", value=0.0, key=f"{key}_full_cx"),
                 st.number_input("Ponto do eixo c₂", value=0.0, key=f"{key}_full_cy"),
@@ -598,22 +619,40 @@ def rigid_controls_3d_full(key: str):
             if u is None:
                 st.error("A direção do eixo não pode ser nula.")
                 u = np.array([0.0, 0.0, 1.0])
-            deg = st.slider("Ângulo de rotação θ (graus)", -180, 180, 45, 5, key=f"{key}_full_ang")
+
+            deg = st.slider(
+                "Ângulo de rotação θ (graus)",
+                -180,
+                180,
+                45,
+                5,
+                key=f"{key}_full_ang",
+            )
             R = rodrigues(u, np.radians(deg))
             slide = 0.0
+
             if typ == "Movimento helicoidal":
-                slide = st.slider("Translação h ao longo do eixo", -5.0, 5.0, 1.0, 0.1, key=f"{key}_full_pitch")
+                slide = st.slider(
+                    "Translação h ao longo do eixo",
+                    -5.0,
+                    5.0,
+                    1.0,
+                    0.1,
+                    key=f"{key}_full_pitch",
+                )
                 Q = R
                 a = c - Q @ c + slide * u
-            elif typ == "Rotoreflexão":
+            elif typ == "Rotorreflexão":
                 H = np.eye(3) - 2 * np.outer(u, u)
                 Q = H @ R
                 a = c - Q @ c
             else:
                 Q = R
                 a = c - Q @ c
+
             meta.update(angle=deg, point=c, axis=u, slide=slide)
-        elif typ == "Reflexão em um plano":
+
+        elif typ in {"Reflexão em um plano", "Reflexão deslizante"}:
             c = np.array([
                 st.number_input("Ponto do plano c₁", value=0.0, key=f"{key}_full_pcx"),
                 st.number_input("Ponto do plano c₂", value=0.0, key=f"{key}_full_pcy"),
@@ -624,73 +663,191 @@ def rigid_controls_3d_full(key: str):
                 st.number_input("Normal do plano n₂", value=0.0, key=f"{key}_full_ny"),
                 st.number_input("Normal do plano n₃", value=1.0, key=f"{key}_full_nz"),
             ])
-            u = safe_unit(n)
-            if u is None:
+            n_unit = safe_unit(n)
+            if n_unit is None:
                 st.error("A normal do plano não pode ser nula.")
-                u = np.array([0.0, 0.0, 1.0])
-            Q = np.eye(3) - 2 * np.outer(u, u)
-            a = c - Q @ c
-            meta.update(point=c, axis=u)
+                n_unit = np.array([0.0, 0.0, 1.0])
+
+            Q = np.eye(3) - 2 * np.outer(n_unit, n_unit)
+            parallel = np.zeros(3)
+            if typ == "Reflexão deslizante":
+                raw_parallel = np.array([
+                    st.number_input("Translação paralela v₁", value=1.0, key=f"{key}_full_vx"),
+                    st.number_input("Translação paralela v₂", value=0.0, key=f"{key}_full_vy"),
+                    st.number_input("Translação paralela v₃", value=0.0, key=f"{key}_full_vz"),
+                ])
+                parallel = raw_parallel - np.dot(raw_parallel, n_unit) * n_unit
+                if np.linalg.norm(parallel) < EPS:
+                    st.warning(
+                        "A componente paralela escolhida é nula. Nesse caso, "
+                        "o movimento coincide com uma reflexão no plano."
+                    )
+                else:
+                    st.caption(
+                        "A interface utiliza a projeção do vetor informado sobre o plano, "
+                        "garantindo ⟨v,n⟩=0."
+                    )
+            a = c - Q @ c + parallel
+            meta.update(point=c, axis=n_unit, translation_parallel=parallel)
+
         meta["Q"] = Q
         meta["a"] = a
         meta["det"] = float(np.linalg.det(Q))
     return Q, a, meta
-
 
 def rigid_orientation_text(det_value: float) -> str:
     """Classifica a parte ortogonal do movimento rígido."""
     return "próprio" if det_value > 0 else "impróprio"
 
 
-def render_rigid_math_2d(meta, alpha_latex: str, tmin: float, tmax: float):
-    M, a = meta["Q"], meta["a"]
-    det_m = float(meta["det"])
-    st.markdown("### Formulação matemática do movimento rígido")
+def _render_rigid_common_concepts(dimension: int, M: np.ndarray, a: np.ndarray, det_m: float):
+    """Exibe os conceitos gerais usando a notação da subseção teórica."""
+    st.markdown("#### Conceitos gerais")
     st.latex(
-        r"F:\mathbb R^2\longrightarrow\mathbb R^2,\qquad "
-        r"F(p)=M(p)+a,\qquad a=(a_1,a_2),\qquad M^TM=I"
+        rf"F:\mathbb R^{dimension}\longrightarrow\mathbb R^{dimension},\qquad "
+        r"F(p)=M(p)+a"
     )
+    st.markdown(
+        r"A aplicação linear $M$ é **ortogonal**, isto é, preserva o produto interno. "
+        r"Na base canônica, essa condição é equivalente a $M^{T}M=I$. "
+        r"O vetor $a$ representa a parte translacional do movimento rígido."
+    )
+    st.latex(r"\langle M(p),M(q)\rangle=\langle p,q\rangle,\qquad M^{T}M=I")
     st.latex(
         rf"M={matrix_latex(M)},\qquad "
         rf"a={vector_latex(a)},\qquad "
         rf"\det M={fmt(det_m)}"
     )
-
-    typ = meta["type"]
-    if typ == "Rotação":
-        c = meta["center"]
-        st.latex(rf"c={vector_latex(c)},\qquad \theta={fmt(meta['angle'])}^\circ")
-        st.latex(r"F(p)=c+R_\theta(p-c)")
-    elif typ in {"Reflexão em uma reta", "Reflexão deslizante"}:
-        c, u = meta["center"], meta["direction"]
-        st.latex(
-            rf"L=\{{c+\lambda u:\lambda\in\mathbb R\}},\qquad "
-            rf"c={vector_latex(c)},\qquad u={vector_latex(u)}"
-        )
-        if typ == "Reflexão deslizante":
-            st.latex(rf"F(p)=c+M(p-c)+hu,\qquad h={fmt(meta['slide'])}")
-        else:
-            st.latex(r"F(p)=c+M(p-c)")
-    elif typ == "Translação":
-        st.latex(r"F(p)=p+a")
-    else:
-        st.latex(r"F(p)=p")
-
-    # A frase explicativa aparece somente depois da regra particular de F.
     st.markdown(
-        rf"A aplicação $F$ é uma **isometria** de $\mathbb R^2$. "
-        rf"A aplicação ortogonal $M$ representa a parte linear do movimento rígido "
-        rf"**{rigid_orientation_text(det_m)}**, pois $\det M={fmt(det_m)}$."
+        r"Como $M$ é ortogonal, temos $\det M\in\{-1,1\}$. "
+        + (
+            r"Neste caso, $\det M=1$; portanto, o movimento rígido é **próprio** "
+            r"e preserva a orientação."
+            if det_m > 0
+            else r"Neste caso, $\det M=-1$; portanto, o movimento rígido é "
+            r"**impróprio** e inverte a orientação."
+        )
+    )
+    st.latex(r"\|F(p)-F(q)\|=\|M(p-q)\|=\|p-q\|")
+    st.markdown(
+        r"Logo, todo movimento rígido é uma **isometria**: ele preserva distâncias, "
+        r"ângulos, regularidade, velocidade e comprimento de arco."
     )
 
-    st.markdown(r"A curva transformada é a composição $\widetilde\alpha=F\circ\alpha$:")
+
+def _render_transpose_explanation(symbol: str = r"\vec{u}"):
+    st.markdown("#### Significado da transposta")
+    st.markdown(
+        rf"Representamos ${symbol}$ como uma matriz coluna. O símbolo "
+        rf"${symbol}^{{\,T}}$ indica sua matriz transposta, que é uma matriz linha."
+    )
+    st.latex(
+        rf"{symbol}=\begin{{pmatrix}}u_1\\ \vdots\\ u_n\end{{pmatrix}},\qquad "
+        rf"{symbol}^{{\,T}}=\begin{{pmatrix}}u_1&\cdots&u_n\end{{pmatrix}}"
+    )
+    st.latex(
+        rf"({symbol}{symbol}^{{\,T}})\vec{{v}}"
+        rf"=\langle {symbol},\vec{{v}}\rangle {symbol}"
+    )
+    st.markdown(
+        rf"Quando ${symbol}$ é unitário, a matriz "
+        rf"${symbol}{symbol}^{{\,T}}$ representa a projeção ortogonal sobre a reta "
+        rf"gerada por ${symbol}$."
+    )
+
+
+def render_rigid_math_2d(meta, alpha_latex: str, tmin: float, tmax: float):
+    M, a = meta["Q"], meta["a"]
+    det_m = float(meta["det"])
+    typ = meta["type"]
+
+    st.markdown("### Formulação matemática do movimento rígido")
+    _render_rigid_common_concepts(2, M, a, det_m)
+    st.markdown("#### Movimento selecionado")
+
+    if typ == "Identidade":
+        st.markdown(
+            r"Na identidade, a parte linear é $M=I$ e a translação é nula. "
+            r"Todos os pontos permanecem fixos."
+        )
+        st.latex(r"M=I,\qquad a=0,\qquad F(p)=p")
+        st.latex(r"\operatorname{Fix}(F)=\mathbb R^2,\qquad \det M=1")
+
+    elif typ == "Translação":
+        st.markdown(
+            r"Na translação, $M=I$ e cada ponto é deslocado pelo mesmo vetor $a$. "
+            r"Quando $a\neq0$, não existem pontos fixos."
+        )
+        st.latex(r"M=I,\qquad F(p)=p+a")
+        st.latex(rf"a={vector_latex(a)},\qquad \operatorname{{Fix}}(F)=\varnothing\;(a\neq0)")
+
+    elif typ == "Rotação":
+        c = meta["center"]
+        theta = meta["angle"]
+        st.markdown(
+            r"A rotação é realizada em torno do ponto $c\in\mathbb R^2$. "
+            r"Primeiro transladamos $c$ para a origem, aplicamos $R_\theta$ e, "
+            r"por fim, retornamos ao ponto $c$."
+        )
+        st.latex(rf"c={vector_latex(c)},\qquad \theta={fmt(theta)}^\circ")
+        st.latex(
+            r"R_\theta="
+            r"\begin{pmatrix}\cos\theta&-\sin\theta\\"
+            r"\sin\theta&\cos\theta\end{pmatrix}"
+        )
+        st.latex(r"F(p)=c+R_\theta(p-c)")
+        st.latex(r"M=R_\theta,\qquad a=c-R_\theta c,\qquad \det R_\theta=1")
+        st.markdown(
+            r"Se $\theta$ não é múltiplo de $2\pi$, o único ponto fixo é o centro $c$."
+        )
+
+    elif typ in {"Reflexão em uma reta", "Reflexão deslizante"}:
+        c, u = meta["center"], meta["direction"]
+        _render_transpose_explanation(r"\vec{u}")
+        st.markdown(
+            r"A reta de reflexão é determinada pelo ponto $c$ e pelo vetor diretor "
+            r"unitário $\vec{u}$."
+        )
+        st.latex(
+            rf"L=\left\{{c+\lambda\vec{{u}}\mid\lambda\in\mathbb R\right\}},\qquad "
+            rf"c={vector_latex(c)},\qquad \vec{{u}}={vector_latex(u)},\qquad "
+            r"\|\vec{u}\|=1"
+        )
+        st.latex(r"H_{\vec{u}}=2\vec{u}\vec{u}^{\,T}-I")
+        st.markdown(
+            r"A aplicação $H_{\vec{u}}$ preserva a componente paralela a $L$ "
+            r"e troca o sinal da componente ortogonal a $L$. Assim, "
+            r"$H_{\vec{u}}\vec{u}=\vec{u}$ e $H_{\vec{u}}\vec{v}=-\vec{v}$ "
+            r"para todo $\vec{v}\perp\vec{u}$."
+        )
+        if typ == "Reflexão em uma reta":
+            st.latex(r"F(p)=c+H_{\vec{u}}(p-c)")
+            st.latex(r"M=H_{\vec{u}},\qquad a=c-H_{\vec{u}}c,\qquad \det M=-1")
+            st.markdown(r"O conjunto de pontos fixos de $F$ é exatamente a reta $L$.")
+        else:
+            h = meta["slide"]
+            st.markdown(
+                r"A reflexão deslizante é a composição da reflexão em relação a $L$ "
+                r"com uma translação paralela à própria reta."
+            )
+            st.latex(rf"F(p)=c+H_{{\vec{{u}}}}(p-c)+h\vec{{u}},\qquad h={fmt(h)}")
+            st.latex(
+                r"M=H_{\vec{u}},\qquad "
+                r"a=c-H_{\vec{u}}c+h\vec{u},\qquad \det M=-1"
+            )
+            st.markdown(
+                r"Quando $h\neq0$, o movimento não possui pontos fixos. "
+                r"Se $h=0$, obtemos apenas uma reflexão em relação à reta $L$."
+            )
+
+    st.markdown("#### Ação do movimento rígido sobre a curva")
     st.latex(
         rf"\alpha:[{fmt(tmin)},{fmt(tmax)}]\longrightarrow\mathbb R^2,\qquad "
         rf"{alpha_latex}"
     )
     st.latex(
-        r"\widetilde\alpha:[t_{\min},t_{\max}]\longrightarrow\mathbb R^2,\qquad "
-        r"\widetilde\alpha(t)=M(\alpha(t))+a"
+        r"\widetilde{\alpha}=F\circ\alpha,\qquad "
+        r"\widetilde{\alpha}(t)=M(\alpha(t))+a"
     )
     st.latex(
         rf"\widetilde\alpha(t)=\left("
@@ -698,63 +855,157 @@ def render_rigid_math_2d(meta, alpha_latex: str, tmin: float, tmax: float):
         rf"{fmt(M[1,0])}x(t)+{fmt(M[1,1])}y(t)+{fmt(a[1])}"
         rf"\right)"
     )
+    st.latex(
+        r"\widetilde\alpha'(t)=M(\alpha'(t)),\qquad "
+        r"\|\widetilde\alpha'(t)\|=\|\alpha'(t)\|"
+    )
+    st.latex(r"\kappa_{\widetilde\alpha}(t)=(\det M)\kappa_\alpha(t)")
+    st.markdown(
+        r"Portanto, movimentos próprios preservam a curvatura orientada, enquanto "
+        r"movimentos impróprios trocam seu sinal."
+    )
 
 
 def render_rigid_math_3d(meta, alpha_latex: str, tmin: float, tmax: float):
     M, a = meta["Q"], meta["a"]
     det_m = float(meta["det"])
-    st.markdown("### Formulação matemática do movimento rígido")
-    st.latex(
-        r"F:\mathbb R^3\longrightarrow\mathbb R^3,\qquad "
-        r"F(p)=M(p)+a,\qquad a=(a_1,a_2,a_3),\qquad M^TM=I"
-    )
-    st.latex(
-        rf"M={matrix_latex(M)},\qquad "
-        rf"a={vector_latex(a)},\qquad "
-        rf"\det M={fmt(det_m)}"
-    )
-
     typ = meta["type"]
-    if typ in {"Rotação em torno de uma reta", "Movimento helicoidal", "Rotoreflexão"}:
-        c, u = meta["point"], meta["axis"]
-        st.latex(
-            rf"L=\{{c+\lambda u:\lambda\in\mathbb R\}},\qquad "
-            rf"c={vector_latex(c)},\qquad u={vector_latex(u)}"
-        )
-        st.latex(rf"\theta={fmt(meta['angle'])}^\circ")
-        if typ == "Movimento helicoidal":
-            st.latex(rf"F(p)=c+R_\theta(p-c)+hu,\qquad h={fmt(meta['slide'])}")
-        elif typ == "Rotoreflexão":
-            st.latex(r"F(p)=c+H_uR_\theta(p-c),\qquad H_u=I-2uu^T")
-        else:
-            st.latex(r"F(p)=c+R_\theta(p-c)")
-    elif typ == "Reflexão em um plano":
-        c, n = meta["point"], meta["axis"]
-        st.latex(
-            rf"\Pi=\{{p\in\mathbb R^3:\langle p-c,n\rangle=0\}},\qquad "
-            rf"c={vector_latex(c)},\qquad n={vector_latex(n)}"
-        )
-        st.latex(r"F(p)=c+(I-2nn^T)(p-c)")
+
+    st.markdown("### Formulação matemática do movimento rígido")
+    _render_rigid_common_concepts(3, M, a, det_m)
+    st.markdown("#### Movimento selecionado")
+
+    if typ == "Identidade":
+        st.markdown(r"Na identidade, $M=I$ e $a=0$. Todos os pontos permanecem fixos.")
+        st.latex(r"M=I,\qquad a=0,\qquad F(p)=p")
+        st.latex(r"\operatorname{Fix}(F)=\mathbb R^3,\qquad \det M=1")
+
     elif typ == "Translação":
-        st.latex(r"F(p)=p+a")
-    else:
-        st.latex(r"F(p)=p")
+        st.markdown(
+            r"Na translação, $M=I$ e todos os pontos são deslocados pelo mesmo vetor $a$."
+        )
+        st.latex(r"M=I,\qquad F(p)=p+a")
+        st.latex(rf"a={vector_latex(a)},\qquad \operatorname{{Fix}}(F)=\varnothing\;(a\neq0)")
 
-    # A frase explicativa aparece somente depois da regra particular de F.
-    st.markdown(
-        rf"A aplicação $F$ é uma **isometria** de $\mathbb R^3$. "
-        rf"A aplicação ortogonal $M$ representa a parte linear do movimento rígido "
-        rf"**{rigid_orientation_text(det_m)}**, pois $\det M={fmt(det_m)}$."
-    )
+    elif typ in {
+        "Rotação em torno de uma reta",
+        "Movimento helicoidal",
+        "Rotorreflexão",
+    }:
+        c, u = meta["point"], meta["axis"]
+        theta = meta["angle"]
+        st.latex(
+            rf"L=\left\{{c+\lambda\vec{{u}}\mid\lambda\in\mathbb R\right\}},\qquad "
+            rf"c={vector_latex(c)},\qquad \vec{{u}}={vector_latex(u)},\qquad "
+            r"\|\vec{u}\|=1"
+        )
+        st.latex(rf"\theta={fmt(theta)}^\circ")
+        st.markdown(
+            r"A aplicação $R_{\vec{u},\theta}$ representa a rotação de ângulo "
+            r"$\theta$ em torno do eixo orientado pela direção $\vec{u}$. "
+            r"Ela preserva a componente paralela a $\vec{u}$ e gira o plano "
+            r"perpendicular a $\vec{u}$."
+        )
+        st.latex(
+            r"R_{\vec{u},\theta}(\vec{v})="
+            r"\cos\theta\,\vec{v}+"
+            r"(1-\cos\theta)\langle\vec{u},\vec{v}\rangle\vec{u}+"
+            r"\sin\theta\,(\vec{u}\wedge\vec{v})"
+        )
 
-    st.markdown(r"A curva transformada é a composição $\widetilde\alpha=F\circ\alpha$:")
+        if typ == "Rotação em torno de uma reta":
+            st.latex(r"F(p)=c+R_{\vec{u},\theta}(p-c)")
+            st.latex(
+                r"M=R_{\vec{u},\theta},\qquad "
+                r"a=c-R_{\vec{u},\theta}c,\qquad \det M=1"
+            )
+            st.markdown(
+                r"Os pontos do eixo $L$ permanecem fixos. Para uma rotação não trivial, "
+                r"o conjunto de pontos fixos é exatamente $L$."
+            )
+
+        elif typ == "Movimento helicoidal":
+            h = meta["slide"]
+            st.markdown(
+                r"O movimento helicoidal combina uma rotação em torno de $L$ com uma "
+                r"translação de comprimento orientado $h$ ao longo do mesmo eixo."
+            )
+            st.latex(
+                rf"F(p)=c+R_{{\vec{{u}},\theta}}(p-c)+h\vec{{u}},\qquad h={fmt(h)}"
+            )
+            st.latex(
+                r"M=R_{\vec{u},\theta},\qquad "
+                r"a=c-R_{\vec{u},\theta}c+h\vec{u},\qquad \det M=1"
+            )
+            st.markdown(
+                r"Quando $h\neq0$, não existem pontos fixos. Se $h=0$, o movimento "
+                r"reduz-se a uma rotação em torno de $L$."
+            )
+
+        else:
+            _render_transpose_explanation(r"\vec{u}")
+            st.markdown(
+                r"Na rotorreflexão, compomos a rotação $R_{\vec{u},\theta}$ com a "
+                r"reflexão $H_{\vec{u}}$ em relação ao plano que passa por $c$ e é "
+                r"perpendicular a $\vec{u}$."
+            )
+            st.latex(r"H_{\vec{u}}=I-2\vec{u}\vec{u}^{\,T}")
+            st.latex(r"F(p)=c+H_{\vec{u}}R_{\vec{u},\theta}(p-c)")
+            st.latex(
+                r"M=H_{\vec{u}}R_{\vec{u},\theta},\qquad "
+                r"a=c-Mc,\qquad \det M=-1"
+            )
+
+    elif typ in {"Reflexão em um plano", "Reflexão deslizante"}:
+        c, n = meta["point"], meta["axis"]
+        _render_transpose_explanation(r"\vec{n}")
+        st.latex(
+            rf"\Pi=\left\{{p\in\mathbb R^3\mid"
+            rf"\langle p-c,\vec{{n}}\rangle=0\right\}},\qquad "
+            rf"c={vector_latex(c)},\qquad \vec{{n}}={vector_latex(n)},\qquad "
+            r"\|\vec{n}\|=1"
+        )
+        st.latex(r"H_{\vec{n}}=I-2\vec{n}\vec{n}^{\,T}")
+        st.markdown(
+            r"A matriz $H_{\vec{n}}$ preserva as componentes tangentes ao plano "
+            r"$\Pi$ e inverte a componente normal. Em particular, "
+            r"$H_{\vec{n}}\vec{n}=-\vec{n}$."
+        )
+
+        if typ == "Reflexão em um plano":
+            st.latex(r"F(p)=c+H_{\vec{n}}(p-c)")
+            st.latex(
+                r"M=H_{\vec{n}},\qquad a=c-H_{\vec{n}}c,\qquad \det M=-1"
+            )
+            st.markdown(r"O conjunto de pontos fixos de $F$ é exatamente o plano $\Pi$.")
+        else:
+            v = meta["translation_parallel"]
+            st.markdown(
+                r"A reflexão deslizante é a composição da reflexão em relação a $\Pi$ "
+                r"com uma translação por um vetor $\vec{v}$ paralelo ao plano."
+            )
+            st.latex(
+                rf"\vec{{v}}={vector_latex(v)},\qquad "
+                r"\langle\vec{v},\vec{n}\rangle=0"
+            )
+            st.latex(r"F(p)=c+H_{\vec{n}}(p-c)+\vec{v}")
+            st.latex(
+                r"M=H_{\vec{n}},\qquad "
+                r"a=c-H_{\vec{n}}c+\vec{v},\qquad \det M=-1"
+            )
+            st.markdown(
+                r"Quando $\vec{v}\neq0$, o movimento não possui pontos fixos. "
+                r"Se $\vec{v}=0$, obtemos a reflexão em relação ao plano $\Pi$."
+            )
+
+    st.markdown("#### Ação do movimento rígido sobre a curva")
     st.latex(
         rf"\alpha:[{fmt(tmin)},{fmt(tmax)}]\longrightarrow\mathbb R^3,\qquad "
         rf"{alpha_latex}"
     )
     st.latex(
-        r"\widetilde\alpha:[t_{\min},t_{\max}]\longrightarrow\mathbb R^3,\qquad "
-        r"\widetilde\alpha(t)=F(\alpha(t))=M(\alpha(t))+a"
+        r"\widetilde{\alpha}=F\circ\alpha,\qquad "
+        r"\widetilde{\alpha}(t)=M(\alpha(t))+a"
     )
     st.latex(
         rf"\widetilde\alpha(t)=\left("
@@ -763,7 +1014,16 @@ def render_rigid_math_3d(meta, alpha_latex: str, tmin: float, tmax: float):
         rf"{fmt(M[2,0])}x(t)+{fmt(M[2,1])}y(t)+{fmt(M[2,2])}z(t)+{fmt(a[2])}"
         rf"\right)"
     )
-
+    st.latex(
+        r"\widetilde\alpha'(t)=M(\alpha'(t)),\qquad "
+        r"\|\widetilde\alpha'(t)\|=\|\alpha'(t)\|"
+    )
+    st.latex(r"\kappa_{\widetilde\alpha}(t)=\kappa_\alpha(t)")
+    st.latex(r"\tau_{\widetilde\alpha}(t)=(\det M)\tau_\alpha(t)")
+    st.markdown(
+        r"A curvatura espacial é preservada por todo movimento rígido. A torção é "
+        r"preservada pelos movimentos próprios e troca de sinal nos movimentos impróprios."
+    )
 
 def render_planar_frenet_at_point(
     p: np.ndarray,
