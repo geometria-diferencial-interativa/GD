@@ -495,13 +495,7 @@ try:
             st.write("A plataforma verifica numericamente o posto da diferencial por meio de $X_u\times X_v$.")
             st.warning("Para concluir pela definição, ainda é necessário justificar que a parametrização é um homeomorfismo local sobre sua imagem. Essa condição não pode ser decidida automaticamente para uma parametrização arbitrária.")
 
-    st.subheader("Interpretação geométrica")
-    st.write(
-        "A condição $X_u\times X_v\neq\vec 0$ garante que a diferencial possui posto 2. "
-        "Entretanto, quando utilizamos diretamente a definição, também devemos verificar "
-        "que a parametrização é um homeomorfismo local sobre sua imagem."
-    )
-
+    
 except Exception as error:
     st.error("Não foi possível gerar ou analisar a superfície. Verifique as expressões e o domínio escolhidos.")
     st.exception(error)
