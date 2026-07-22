@@ -113,7 +113,7 @@ with st.sidebar:
 
     st.page_link(
         "pages/03_Plano_Tangente_Normal.py",
-        label="3. Plano Tangente e Vetor Normal"
+        label="3. Plano Tangente Orientabilidade"
     )
 
     st.page_link(
@@ -350,7 +350,7 @@ with st.expander("2. Superfícies Regulares"):
 # MÓDULO 3
 # ============================================================
 
-with st.expander("3. Plano Tangente e Vetor Normal"):
+with st.expander("3. Plano Tangente e Orientabilidade"):
 
     st.write(
         """
